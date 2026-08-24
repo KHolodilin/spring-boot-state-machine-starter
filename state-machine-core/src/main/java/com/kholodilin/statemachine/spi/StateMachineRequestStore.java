@@ -12,6 +12,8 @@ public interface StateMachineRequestStore {
 
     Optional<StateMachineRequest> findByEventId(String eventId);
 
+    List<StateMachineRequest> findRecoverable(int batchSize);
+
     List<StateMachineRequest> claimRecoverable(String lockedBy, Instant lockedUntil, int batchSize);
 
     boolean claim(long id, String lockedBy, Instant lockedUntil);

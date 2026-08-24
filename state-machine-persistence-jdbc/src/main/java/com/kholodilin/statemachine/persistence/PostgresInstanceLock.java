@@ -14,7 +14,7 @@ public final class PostgresInstanceLock implements InstanceLock {
     @Override
     public void acquire(String machineType, String machineId) {
         jdbcTemplate.query(
-                "SELECT pg_advisory_xact_lock(hashtext(? || chr(0) || ?))",
+                "SELECT pg_advisory_xact_lock(hashtext(?), hashtext(?))",
                 rs -> null,
                 machineType,
                 machineId);

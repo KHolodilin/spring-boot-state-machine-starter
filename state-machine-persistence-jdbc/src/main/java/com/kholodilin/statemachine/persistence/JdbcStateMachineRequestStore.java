@@ -58,6 +58,24 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
     }
 
     @Override
+    public List<StateMachineRequest> findRecoverable(int batchSize) {
+        return jdbcTemplate.query(
+                """
+                SELECT *
+                FROM state_machine_request
+                WHERE status IN (?, ?)
+                   OR (status = ? AND (locked_until IS NULL OR locked_until < NOW()))
+                ORDER BY id
+                LIMIT ?
+                """,
+                mapper(),
+                StateMachineRequest.NEW,
+                StateMachineRequest.FAILED,
+                StateMachineRequest.PROCESSING,
+                batchSize);
+    }
+
+    @Override
     public List<StateMachineRequest> claimRecoverable(String lockedBy, Instant lockedUntil, int batchSize) {
         return jdbcTemplate.query(
                 """
