@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: state-machine-demo
+  datasource:
+    url: jdbc:postgresql://localhost:5432/statemachine
+    username: postgres
+    password: postgres
+
+state-machine:
+  enabled: true
+  instance-id: ${HOSTNAME:local}
+  persistence:
+    schema:
+      mode: create
+  cache:
+    enabled: true
+    max-size: 100000
+    expire-after-access: 30m
+  async:
+    enabled: true
+    workers: 4
+    queue:
+      capacity: 10000
+    lease-duration: 30s
+    max-retries: 5
+    recovery:
+      enabled: true
+      interval: 10s
+      batch-size: 500
+
+demo:
+  auto-run: false
