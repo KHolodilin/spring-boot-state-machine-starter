@@ -1,0 +1,68 @@
+# Demo Spring Boot application. Start PostgreSQL with:
+#   docker compose -f state-machine-demo/docker-compose.yml up -d
+spring:
+  application:
+    # Appears in logs and Actuator; not used as a state-machine type.
+    name: state-machine-demo
+  datasource:
+    # PostgreSQL is the durable source of truth for instances, events and async requests.
+    url: jdbc:postgresql://localhost:5432/statemachine
+    username: postgres
+    password: postgres
+
+# Library settings bound to StateMachineProperties (prefix state-machine).
+state-machine:
+  # Master switch. When false, auto-configuration does not start workers, cache or the service.
+  enabled: true
+  # Identity of this process. Used as the recovery lease owner (locked_by).
+  instance-id: ${HOSTNAME:local}
+
+  persistence:
+    schema:
+      # create  — create missing tables (demo/test)
+      # validate — fail-fast if tables/columns/keys do not match the expected schema (production)
+      # none     — do not touch schema (use Flyway/Liquibase and docs/state-machine-schema.sql)
+      mode: create
+
+  cache:
+    # In-memory Caffeine hot set. PostgreSQL remains the source of truth.
+    enabled: true
+    # Maximum number of cached instances. Eviction never writes to the database.
+    max-size: 100000
+    # Drop an idle cache entry after this duration since last access.
+    expire-after-access: 30m
+
+  async:
+    # Enables sendAsync(), the in-memory dispatch queue and worker threads.
+    enabled: true
+    # Number of worker threads and queue partitions. Events for one machineId stay on one partition.
+    workers: 4
+    queue:
+      # Bounded in-memory capacity across all partitions. Overflow is not data loss: recovery re-offers durable requests.
+      capacity: 10000
+    # How long a PROCESSING lease stays valid before recovery may reclaim the request.
+    lease-duration: 30s
+    # Failed async requests are retried up to this count, then marked DEAD.
+    max-retries: 5
+    recovery:
+      # Scheduled job that re-offers NEW, FAILED and expired PROCESSING rows to the worker queue.
+      enabled: true
+      # Delay between recovery scans.
+      interval: 10s
+      # Maximum rows claimed with SKIP LOCKED per batch; recovery continues until empty or the in-memory queue is full.
+      batch-size: 500
+
+  observability:
+    metrics:
+      # Micrometer counters/timers/gauges. Do not tag with machineId or eventId.
+      enabled: true
+    tracing:
+      # Micrometer Observation span state-machine.transition (machineId/eventId allowed as trace attributes).
+      enabled: true
+    health:
+      # Actuator indicator stateMachine: cache/queue size and oldest pending request age.
+      enabled: true
+
+demo:
+  # When true, DemoRunner sends a sample order-saga event on startup.
+  auto-run: false
