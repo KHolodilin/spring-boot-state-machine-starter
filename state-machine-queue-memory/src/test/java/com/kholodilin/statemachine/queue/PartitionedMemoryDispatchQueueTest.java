@@ -1,10 +1,11 @@
 package com.kholodilin.statemachine.queue;
 
-import org.junit.jupiter.api.Test;
-
 import java.time.Duration;
 
+import org.junit.jupiter.api.Test;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PartitionedMemoryDispatchQueueTest {
 
@@ -31,5 +32,21 @@ class PartitionedMemoryDispatchQueueTest {
         assertThat(queue.offer(2L, "m")).isTrue();
         assertThat(queue.offer(3L, "m")).isFalse();
         assertThat(queue.pressure()).isEqualTo(1.0);
+        assertThat(queue.size()).isEqualTo(2);
+        assertThat(queue.capacity()).isEqualTo(2);
+        assertThat(queue.partitions()).isEqualTo(1);
+    }
+
+    @Test
+    void pollTimesOutOnEmptyPartition() throws InterruptedException {
+        PartitionedMemoryDispatchQueue queue = new PartitionedMemoryDispatchQueue(2, 10);
+        assertThat(queue.poll(0, Duration.ofMillis(20))).isNull();
+    }
+
+    @Test
+    void rejectsInvalidConstructorArgs() {
+        assertThatThrownBy(() -> new PartitionedMemoryDispatchQueue(0, 10))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new PartitionedMemoryDispatchQueue(1, 0)).isInstanceOf(IllegalArgumentException.class);
     }
 }

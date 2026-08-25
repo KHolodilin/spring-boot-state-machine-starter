@@ -1,5 +1,9 @@
 package com.kholodilin.statemachine;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+
 import com.kholodilin.statemachine.definition.StateMachineDefinition;
 import com.kholodilin.statemachine.definition.Transition;
 import com.kholodilin.statemachine.engine.DefaultTransitionEngine;
@@ -13,20 +17,25 @@ import com.kholodilin.statemachine.spi.ProcessedStateMachineEvent;
 import com.kholodilin.statemachine.spi.StateMachineRequest;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CoreApiTest {
 
-    enum OrderState { NEW, PENDING, DONE }
+    enum OrderState {
+        NEW,
+        PENDING,
+        DONE
+    }
 
-    enum OrderEvent { START, FINISH }
+    enum OrderEvent {
+        START,
+        FINISH
+    }
 
-    enum OtherEvent { X }
+    enum OtherEvent {
+        X
+    }
 
     @Test
     void contextAccessorsAndMutations() {
@@ -52,7 +61,8 @@ class CoreApiTest {
         context.remove("id");
         assertThat(context.asMap()).doesNotContainKey("id");
         assertThat(MapStateMachineContext.empty().asMap()).isEmpty();
-        assertThat(MapStateMachineContext.copyOf(Map.of("k", "v")).getString("k")).contains("v");
+        assertThat(MapStateMachineContext.copyOf(Map.of("k", "v")).getString("k"))
+                .contains("v");
         assertThatThrownBy(() -> context.put(null, "x")).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> context.get("id", null)).isInstanceOf(NullPointerException.class);
     }
@@ -75,12 +85,12 @@ class CoreApiTest {
 
     @Test
     void transitionResultRecords() {
-        TransitionResult.Duplicate duplicate = new TransitionResult.Duplicate(
-                "order", "1", "evt", "START", "NEW", "PENDING");
+        TransitionResult.Duplicate duplicate =
+                new TransitionResult.Duplicate("order", "1", "evt", "START", "NEW", "PENDING");
         assertThat(duplicate.outcome()).isEqualTo(TransitionOutcome.DUPLICATE);
 
-        TransitionResult.Success success = new TransitionResult.Success(
-                "order", "1", "evt", "START", "NEW", "PENDING", 1, null, null);
+        TransitionResult.Success success =
+                new TransitionResult.Success("order", "1", "evt", "START", "NEW", "PENDING", 1, null, null);
         assertThat(success.commands()).isEmpty();
         assertThat(success.context()).isEmpty();
         assertThat(success.outcome()).isEqualTo(TransitionOutcome.SUCCESS);
@@ -88,8 +98,8 @@ class CoreApiTest {
         AsyncSubmission submission = new AsyncSubmission("evt", "order", "1", 9L);
         assertThat(submission.requestId()).isEqualTo(9L);
 
-        TransitionResult.Rejected rejected = new TransitionResult.Rejected(
-                "order", "1", "evt", "START", "NEW", RejectedReason.NO_TRANSITION);
+        TransitionResult.Rejected rejected =
+                new TransitionResult.Rejected("order", "1", "evt", "START", "NEW", RejectedReason.NO_TRANSITION);
         assertThat(rejected.outcome()).isEqualTo(TransitionOutcome.REJECTED);
     }
 
@@ -136,76 +146,66 @@ class CoreApiTest {
                 .isInstanceOf(InvalidDefinitionException.class);
         assertThatThrownBy(() -> StateMachineDefinition.builder(null, OrderState.class, OrderEvent.class))
                 .isInstanceOf(InvalidDefinitionException.class);
-        assertThatThrownBy(() -> StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
-                .payload(OrderEvent.START, Void.class)
-                .build())
+        assertThatThrownBy(() -> StateMachineDefinition.builder("order-saga", OrderState.class, OrderEvent.class)
+                        .payload(OrderEvent.START, Void.class)
+                        .build())
                 .isInstanceOf(InvalidDefinitionException.class)
                 .hasMessageContaining("initial");
-        assertThatThrownBy(() -> StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
-                .initial(OrderState.NEW)
-                .payload(OrderEvent.START, Void.class)
-                .transition()
-                .from(OrderState.NEW)
-                .event(OrderEvent.START)
-                .build())
+        assertThatThrownBy(() -> StateMachineDefinition.builder("order-saga", OrderState.class, OrderEvent.class)
+                        .initial(OrderState.NEW)
+                        .payload(OrderEvent.START, Void.class)
+                        .transition()
+                        .from(OrderState.NEW)
+                        .event(OrderEvent.START)
+                        .build())
                 .isInstanceOf(InvalidDefinitionException.class)
                 .hasMessageContaining(".to(");
-        assertThatThrownBy(() -> StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
-                .payload(OrderEvent.START, Void.class)
-                .transition()
-                .from(OrderState.NEW)
-                .event(OrderEvent.START, String.class))
+        assertThatThrownBy(() -> StateMachineDefinition.builder("order-saga", OrderState.class, OrderEvent.class)
+                        .payload(OrderEvent.START, Void.class)
+                        .transition()
+                        .from(OrderState.NEW)
+                        .event(OrderEvent.START, String.class))
                 .isInstanceOf(InvalidDefinitionException.class)
                 .hasMessageContaining("does not match");
-        assertThatThrownBy(() -> StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
-                .initial(null))
+        assertThatThrownBy(() -> StateMachineDefinition.builder("order-saga", OrderState.class, OrderEvent.class)
+                        .initial(null))
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
-                .payload(null, Void.class))
+        assertThatThrownBy(() -> StateMachineDefinition.builder("order-saga", OrderState.class, OrderEvent.class)
+                        .payload(null, Void.class))
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
-                .payload(OrderEvent.START, Void.class)
-                .transition()
-                .from(OrderState.NEW)
-                .event(null))
+        assertThatThrownBy(() -> StateMachineDefinition.builder("order-saga", OrderState.class, OrderEvent.class)
+                        .payload(OrderEvent.START, Void.class)
+                        .transition()
+                        .from(OrderState.NEW)
+                        .event(null))
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
-                .payload(OrderEvent.START, Void.class)
-                .transition()
-                .from(OrderState.NEW)
-                .event(OrderEvent.START)
-                .when(null))
+        assertThatThrownBy(() -> StateMachineDefinition.builder("order-saga", OrderState.class, OrderEvent.class)
+                        .payload(OrderEvent.START, Void.class)
+                        .transition()
+                        .from(OrderState.NEW)
+                        .event(OrderEvent.START)
+                        .when(null))
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
-                .payload(OrderEvent.START, Void.class)
-                .transition()
-                .from(OrderState.NEW)
-                .event(OrderEvent.START)
-                .to(null))
+        assertThatThrownBy(() -> StateMachineDefinition.builder("order-saga", OrderState.class, OrderEvent.class)
+                        .payload(OrderEvent.START, Void.class)
+                        .transition()
+                        .from(OrderState.NEW)
+                        .event(OrderEvent.START)
+                        .to(null))
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
-                .payload(OrderEvent.START, Void.class)
-                .transition()
-                .from(OrderState.NEW)
-                .event(OrderEvent.START)
-                .updateContext(null))
+        assertThatThrownBy(() -> StateMachineDefinition.builder("order-saga", OrderState.class, OrderEvent.class)
+                        .payload(OrderEvent.START, Void.class)
+                        .transition()
+                        .from(OrderState.NEW)
+                        .event(OrderEvent.START)
+                        .updateContext(null))
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
-                .payload(OrderEvent.START, Void.class)
-                .transition()
-                .from(OrderState.NEW)
-                .event(OrderEvent.START)
-                .command(null))
+        assertThatThrownBy(() -> StateMachineDefinition.builder("order-saga", OrderState.class, OrderEvent.class)
+                        .payload(OrderEvent.START, Void.class)
+                        .transition()
+                        .from(OrderState.NEW)
+                        .event(OrderEvent.START)
+                        .command(null))
                 .isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> StateMachineDefinition.builder("order-saga", null, OrderEvent.class))
                 .isInstanceOf(NullPointerException.class);
@@ -213,8 +213,8 @@ class CoreApiTest {
 
     @Test
     void payloadRegistrationAfterTransitionAndGuardedTransition() {
-        StateMachineDefinition<OrderState, OrderEvent> definition = StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
+        StateMachineDefinition<OrderState, OrderEvent> definition = StateMachineDefinition.builder(
+                        "order-saga", OrderState.class, OrderEvent.class)
                 .initial(OrderState.NEW)
                 .payload(OrderEvent.START, Void.class)
                 .transition()
@@ -235,33 +235,33 @@ class CoreApiTest {
     @Test
     void engineRejectsMismatchedEventType() {
         StateMachineDefinition<OrderState, OrderEvent> definition = startDefinition();
-        assertThatThrownBy(() -> new DefaultTransitionEngine().transition(
-                definition,
-                new StateMachineInstance("order-saga", "1", "NEW", Map.of(), 0),
-                new StateMachineEvent<>("e", "1", OtherEvent.X, null)))
+        assertThatThrownBy(() -> new DefaultTransitionEngine()
+                        .transition(
+                                definition,
+                                new StateMachineInstance("order-saga", "1", "NEW", Map.of(), 0),
+                                new StateMachineEvent<>("e", "1", OtherEvent.X, null)))
                 .isInstanceOf(EventTypeMismatchException.class);
     }
 
     @Test
     void remainingExceptionsAndSpi() {
-        assertThat(new OptimisticLockConflictException("t", "id", 3).getMessage()).contains("version 3");
+        assertThat(new OptimisticLockConflictException("t", "id", 3).getMessage())
+                .contains("version 3");
         assertThat(new PayloadDeserializationException("bad", new IllegalStateException()).getCause())
                 .isInstanceOf(IllegalStateException.class);
 
-        ProcessedStateMachineEvent processed = new ProcessedStateMachineEvent(
-                "e", "t", "id", "START", "NEW", "PENDING", "success", Instant.now());
+        ProcessedStateMachineEvent processed =
+                new ProcessedStateMachineEvent("e", "t", "id", "START", "NEW", "PENDING", "success", Instant.now());
         assertThat(processed.result()).isEqualTo("success");
 
         StateMachineRequest request = new StateMachineRequest(
                 1L, "e", "t", "id", "START", "{}", StateMachineRequest.NEW, 0, null, null, null, null);
         assertThat(request.status()).isEqualTo(StateMachineRequest.NEW);
 
-        new NoOpCommandPublisher().publish(
-                new StateMachineInstance("t", "id", "NEW", Map.of(), 0),
-                List.of());
+        new NoOpCommandPublisher().publish(new StateMachineInstance("t", "id", "NEW", Map.of(), 0), List.of());
 
-        Transition<OrderState, OrderEvent, Void> withoutGuard = new Transition<>(
-                OrderState.NEW, OrderEvent.START, Void.class, null, OrderState.PENDING, null, null);
+        Transition<OrderState, OrderEvent, Void> withoutGuard =
+                new Transition<>(OrderState.NEW, OrderEvent.START, Void.class, null, OrderState.PENDING, null, null);
         assertThat(withoutGuard.hasGuard()).isFalse();
         assertThat(withoutGuard.commandFactories()).isEmpty();
 
@@ -277,13 +277,16 @@ class CoreApiTest {
                 new StateMachineEvent<>("e", "1", OrderEvent.START, "body"));
         assertThat(transitionContext.payload()).isEqualTo("body");
         assertThatThrownBy(() -> new DefaultTransitionContext<>(
-                "order-saga", "1", OrderState.NEW, null, new StateMachineEvent<>("e", "1", OrderEvent.START, null)))
+                        "order-saga",
+                        "1",
+                        OrderState.NEW,
+                        null,
+                        new StateMachineEvent<>("e", "1", OrderEvent.START, null)))
                 .isInstanceOf(NullPointerException.class);
     }
 
     private static StateMachineDefinition<OrderState, OrderEvent> startDefinition() {
-        return StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
+        return StateMachineDefinition.builder("order-saga", OrderState.class, OrderEvent.class)
                 .initial(OrderState.NEW)
                 .payload(OrderEvent.START, Void.class)
                 .transition()

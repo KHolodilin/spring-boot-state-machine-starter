@@ -1,5 +1,8 @@
 package com.kholodilin.statemachine.engine;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.kholodilin.statemachine.ContextUpdater;
 import com.kholodilin.statemachine.DefaultTransitionContext;
 import com.kholodilin.statemachine.MapStateMachineContext;
@@ -16,9 +19,6 @@ import com.kholodilin.statemachine.definition.Transition;
 import com.kholodilin.statemachine.exception.AmbiguousTransitionException;
 import com.kholodilin.statemachine.exception.EventTypeMismatchException;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Default {@link TransitionEngine}: matches transitions, evaluates guards, updates context and builds commands.
  */
@@ -30,20 +30,18 @@ public final class DefaultTransitionEngine implements TransitionEngine {
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
     public TransitionResult transition(
-            StateMachineDefinition<?, ?> definition,
-            StateMachineInstance instance,
-            StateMachineEvent<?, ?> event) {
+            StateMachineDefinition<?, ?> definition, StateMachineInstance instance, StateMachineEvent<?, ?> event) {
         return doTransition((StateMachineDefinition) definition, instance, event);
     }
 
     @SuppressWarnings("unchecked")
     private <S extends Enum<S>, E extends Enum<E>> TransitionResult doTransition(
-            StateMachineDefinition<S, E> definition,
-            StateMachineInstance instance,
-            StateMachineEvent<?, ?> rawEvent) {
+            StateMachineDefinition<S, E> definition, StateMachineInstance instance, StateMachineEvent<?, ?> rawEvent) {
         if (!definition.eventType().isInstance(rawEvent.type())) {
             throw new EventTypeMismatchException(
-                    definition.machineType(), definition.eventType(), rawEvent.type().getClass());
+                    definition.machineType(),
+                    definition.eventType(),
+                    rawEvent.type().getClass());
         }
         @SuppressWarnings("unchecked")
         StateMachineEvent<E, Object> event = (StateMachineEvent<E, Object>) rawEvent;
@@ -56,11 +54,7 @@ public final class DefaultTransitionEngine implements TransitionEngine {
         List<Transition<S, E, Object>> matched = new ArrayList<>();
         StateMachineContext currentContext = MapStateMachineContext.copyOf(instance.context());
         TransitionContext<S, E, Object> guardContext = new DefaultTransitionContext<>(
-                definition.machineType(),
-                instance.machineId(),
-                current,
-                currentContext,
-                event);
+                definition.machineType(), instance.machineId(), current, currentContext, event);
         for (Transition<S, E, Object> candidate : candidates) {
             if (candidate.guard() == null || candidate.guard().test(guardContext)) {
                 matched.add(candidate);
@@ -70,19 +64,14 @@ public final class DefaultTransitionEngine implements TransitionEngine {
             return rejected(definition, instance, event, RejectedReason.GUARD_NOT_MATCHED);
         }
         if (matched.size() > 1) {
-            throw new AmbiguousTransitionException(
-                    "Multiple transitions matched for " + definition.machineType()
-                            + " state " + current + " event " + event.type());
+            throw new AmbiguousTransitionException("Multiple transitions matched for " + definition.machineType()
+                    + " state " + current + " event " + event.type());
         }
 
         Transition<S, E, Object> chosen = matched.getFirst();
         StateMachineContext updated = applyUpdater(currentContext, event, chosen.contextUpdater());
-        TransitionContext<S, E, Object> commandContext = new DefaultTransitionContext<>(
-                definition.machineType(),
-                instance.machineId(),
-                current,
-                updated,
-                event);
+        TransitionContext<S, E, Object> commandContext =
+                new DefaultTransitionContext<>(definition.machineType(), instance.machineId(), current, updated, event);
         List<StateMachineCommand> commands = new ArrayList<>();
         for (StateMachineCommandFactory<S, E, Object> factory : chosen.commandFactories()) {
             commands.add(factory.create(commandContext));
@@ -100,9 +89,7 @@ public final class DefaultTransitionEngine implements TransitionEngine {
     }
 
     private static <E, P> StateMachineContext applyUpdater(
-            StateMachineContext current,
-            StateMachineEvent<E, P> event,
-            ContextUpdater<E, P> updater) {
+            StateMachineContext current, StateMachineEvent<E, P> event, ContextUpdater<E, P> updater) {
         if (updater == null) {
             return current;
         }

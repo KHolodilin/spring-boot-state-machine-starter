@@ -10,12 +10,7 @@ import java.util.Objects;
  * @param type      what happened
  * @param payload   event-specific data; {@code null} when the payload type is {@link Void}
  */
-public record StateMachineEvent<E, P>(
-        String eventId,
-        String machineId,
-        E type,
-        P payload
-) {
+public record StateMachineEvent<E, P>(String eventId, String machineId, E type, P payload) {
 
     /**
      * Rejects null or blank identifiers.

@@ -1,4 +1,5 @@
-# Demo Spring Boot application. Requires a local PostgreSQL instance.
+# Demo Spring Boot application. Start PostgreSQL with:
+#   docker compose -f state-machine-demo/docker-compose.yml up -d
 spring:
   application:
     # Appears in logs and Actuator; not used as a state-machine type.
@@ -48,7 +49,7 @@ state-machine:
       enabled: true
       # Delay between recovery scans.
       interval: 10s
-      # Maximum number of recoverable rows claimed per scan.
+      # Maximum rows claimed with SKIP LOCKED per batch; recovery continues until empty or the in-memory queue is full.
       batch-size: 500
 
   observability:

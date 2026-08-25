@@ -11,14 +11,18 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 class CoreArchitectureTest {
 
     @ArchTest
-    static final ArchRule noSpring = noClasses()
-            .should().dependOnClassesThat().resideInAnyPackage("org.springframework..");
+    static final ArchRule noSpring =
+            noClasses().should().dependOnClassesThat().resideInAnyPackage("org.springframework..");
 
     @ArchTest
     static final ArchRule noJdbc = noClasses()
-            .should().dependOnClassesThat().resideInAnyPackage("java.sql..", "javax.sql..", "org.postgresql..");
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage("java.sql..", "javax.sql..", "org.postgresql..");
 
     @ArchTest
     static final ArchRule noKafka = noClasses()
-            .should().dependOnClassesThat().resideInAnyPackage("org.apache.kafka..", "org.springframework.kafka..");
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage("org.apache.kafka..", "org.springframework.kafka..");
 }

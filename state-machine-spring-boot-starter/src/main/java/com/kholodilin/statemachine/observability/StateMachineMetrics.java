@@ -1,5 +1,7 @@
 package com.kholodilin.statemachine.observability;
 
+import java.util.concurrent.TimeUnit;
+
 import com.kholodilin.statemachine.TransitionOutcome;
 import com.kholodilin.statemachine.TransitionResult;
 import com.kholodilin.statemachine.cache.CaffeineStateMachineCache;
@@ -8,8 +10,6 @@ import com.kholodilin.statemachine.spi.StateMachineDispatchQueue;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Micrometer counters, timers and gauges. Never tags {@code machineId} or {@code eventId}.
@@ -50,10 +50,7 @@ public final class StateMachineMetrics {
      * @param cache    size and optional eviction gauge
      * @param queue    size and pressure gauges
      */
-    public StateMachineMetrics(
-            MeterRegistry registry,
-            StateMachineCache cache,
-            StateMachineDispatchQueue queue) {
+    public StateMachineMetrics(MeterRegistry registry, StateMachineCache cache, StateMachineDispatchQueue queue) {
         this.registry = registry;
         registry.gauge("state_machine_cache_size", cache, StateMachineCache::size);
         registry.gauge("state_machine_queue_size", queue, StateMachineDispatchQueue::size);

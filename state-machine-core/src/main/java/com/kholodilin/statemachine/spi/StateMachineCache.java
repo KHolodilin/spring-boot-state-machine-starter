@@ -1,8 +1,8 @@
 package com.kholodilin.statemachine.spi;
 
-import com.kholodilin.statemachine.StateMachineInstance;
-
 import java.util.Optional;
+
+import com.kholodilin.statemachine.StateMachineInstance;
 
 /**
  * Optional RAM hot set. PostgreSQL remains the source of truth. Eviction never persists.

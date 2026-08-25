@@ -39,8 +39,7 @@ public class OrderSagaConfiguration {
      */
     @Bean
     StateMachineDefinition<OrderState, OrderEvent> orderSaga() {
-        return StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
+        return StateMachineDefinition.builder("order-saga", OrderState.class, OrderEvent.class)
                 .initial(OrderState.NEW)
                 .payload(OrderEvent.START, Void.class)
                 .payload(OrderEvent.PAYMENT_RESERVED, PaymentReservedPayload.class)
@@ -57,7 +56,8 @@ public class OrderSagaConfiguration {
                 .from(OrderState.PAYMENT_PENDING)
                 .event(OrderEvent.PAYMENT_RESERVED, PaymentReservedPayload.class)
                 .to(OrderState.INVENTORY_PENDING)
-                .updateContext((ctx, event) -> ctx.put("paymentReservationId", event.payload().reservationId()))
+                .updateContext((ctx, event) ->
+                        ctx.put("paymentReservationId", event.payload().reservationId()))
                 .command(ctx -> new ReserveInventoryCommand(
                         ctx.machineId(),
                         ctx.workflowContext().getString("paymentReservationId").orElseThrow()))

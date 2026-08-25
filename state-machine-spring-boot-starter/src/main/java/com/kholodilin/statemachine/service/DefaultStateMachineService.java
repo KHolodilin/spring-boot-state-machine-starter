@@ -1,5 +1,9 @@
 package com.kholodilin.statemachine.service;
 
+import java.time.Instant;
+import java.util.Map;
+import java.util.Optional;
+
 import com.kholodilin.statemachine.AsyncSubmission;
 import com.kholodilin.statemachine.StateMachineEvent;
 import com.kholodilin.statemachine.StateMachineInstance;
@@ -32,10 +36,6 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import java.time.Instant;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * Transactional {@link StateMachineService}: advisory lock, idempotency, engine, persist and command publish.
@@ -144,7 +144,8 @@ public class DefaultStateMachineService implements StateMachineService {
         try {
             requestId = requestStore.append(request);
         } catch (DuplicateKeyException ex) {
-            requestId = requestStore.findByEventId(event.eventId())
+            requestId = requestStore
+                    .findByEventId(event.eventId())
                     .map(StateMachineRequest::id)
                     .orElseThrow(() -> ex);
             metrics.asyncSubmitted(machineType);
@@ -180,11 +181,12 @@ public class DefaultStateMachineService implements StateMachineService {
             StateMachineDefinition<?, ?> definition = registry.getRequired(request.machineType());
             Object payload = deserializePayload(definition, request);
             Enum<?> eventType = definition.eventFromName(request.eventType());
-            StateMachineEvent<?, ?> event = new StateMachineEvent<>(
-                    request.eventId(), request.machineId(), eventType, payload);
+            StateMachineEvent<?, ?> event =
+                    new StateMachineEvent<>(request.eventId(), request.machineId(), eventType, payload);
             TransitionResult result = send(request.machineType(), event);
             requestStore.markDone(requestId);
-            metrics.asyncProcessed(request.machineType(), result.outcome().name().toLowerCase());
+            metrics.asyncProcessed(
+                    request.machineType(), result.outcome().name().toLowerCase());
             return result;
         } catch (RuntimeException ex) {
             int retries = request.retryCount() + 1;
@@ -303,18 +305,22 @@ public class DefaultStateMachineService implements StateMachineService {
     private void validateEvent(StateMachineDefinition<?, ?> definition, StateMachineEvent<?, ?> event) {
         if (!definition.eventType().isInstance(event.type())) {
             throw new EventTypeMismatchException(
-                    definition.machineType(), definition.eventType(), event.type().getClass());
+                    definition.machineType(),
+                    definition.eventType(),
+                    event.type().getClass());
         }
     }
 
     private Object deserializePayload(StateMachineDefinition<?, ?> definition, StateMachineRequest request) {
-        Class<?> payloadType = definition.findPayloadType(request.eventType())
+        Class<?> payloadType = definition
+                .findPayloadType(request.eventType())
                 .orElseThrow(() -> new PayloadDeserializationException(
                         "Unknown event type " + request.eventType() + " for " + request.machineType(), null));
         return jsonMaps.read(request.payloadJson(), payloadType);
     }
 
-    private <E, P> TransitionResult observe(String machineType, StateMachineEvent<E, P> event, java.util.function.Supplier<TransitionResult> action) {
+    private <E, P> TransitionResult observe(
+            String machineType, StateMachineEvent<E, P> event, java.util.function.Supplier<TransitionResult> action) {
         Observation observation = Observation.createNotStarted("state-machine.transition", observationRegistry)
                 .lowCardinalityKeyValue("state.machine.type", machineType)
                 .lowCardinalityKeyValue("state.event.type", String.valueOf(event.type()))
@@ -322,7 +328,8 @@ public class DefaultStateMachineService implements StateMachineService {
                 .highCardinalityKeyValue("state.event.id", event.eventId());
         return observation.observe(() -> {
             TransitionResult result = action.get();
-            observation.lowCardinalityKeyValue("state.result", result.outcome().name().toLowerCase());
+            observation.lowCardinalityKeyValue(
+                    "state.result", result.outcome().name().toLowerCase());
             if (result instanceof TransitionResult.Success success) {
                 observation.lowCardinalityKeyValue("state.from", success.fromState());
                 observation.lowCardinalityKeyValue("state.to", success.toState());

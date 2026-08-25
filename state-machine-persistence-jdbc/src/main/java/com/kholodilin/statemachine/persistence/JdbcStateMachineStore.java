@@ -1,14 +1,14 @@
 package com.kholodilin.statemachine.persistence;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Optional;
+
 import com.kholodilin.statemachine.StateMachineInstance;
 import com.kholodilin.statemachine.spi.StateMachineStore;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Optional;
 
 /**
  * JDBC implementation of {@link StateMachineStore} against {@code state_machine_instance}.
@@ -32,15 +32,12 @@ public final class JdbcStateMachineStore implements StateMachineStore {
      */
     @Override
     public Optional<StateMachineInstance> find(String machineType, String machineId) {
-        return jdbcTemplate.query(
-                """
+        return jdbcTemplate.query("""
                 SELECT machine_type, machine_id, state, context::text, version
                 FROM state_machine_instance
                 WHERE machine_type = ? AND machine_id = ?
-                """,
-                mapper(),
-                machineType,
-                machineId).stream().findFirst();
+                """, mapper(), machineType, machineId).stream()
+                .findFirst();
     }
 
     /**

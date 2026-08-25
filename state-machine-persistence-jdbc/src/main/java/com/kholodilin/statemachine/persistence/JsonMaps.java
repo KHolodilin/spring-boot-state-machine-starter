@@ -1,12 +1,12 @@
 package com.kholodilin.statemachine.persistence;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import com.kholodilin.statemachine.exception.PayloadDeserializationException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * Jackson 3 helpers for workflow context maps and event payloads stored as JSONB.

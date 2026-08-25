@@ -1,14 +1,14 @@
 package com.kholodilin.statemachine.observability;
 
+import java.time.Duration;
+import java.time.Instant;
+
 import com.kholodilin.statemachine.async.StateMachineWorkerPool;
 import com.kholodilin.statemachine.spi.StateMachineCache;
 import com.kholodilin.statemachine.spi.StateMachineDispatchQueue;
 import com.kholodilin.statemachine.spi.StateMachineRequestStore;
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
-
-import java.time.Duration;
-import java.time.Instant;
 
 /**
  * Actuator indicator {@code stateMachine}: cache/queue size and oldest pending request age.
@@ -47,7 +47,8 @@ public final class StateMachineHealthIndicator implements HealthIndicator {
     @Override
     public Health health() {
         Instant oldest = requestStore.oldestPendingCreatedAt();
-        long oldestAgeSeconds = oldest == null ? 0 : Duration.between(oldest, Instant.now()).toSeconds();
+        long oldestAgeSeconds =
+                oldest == null ? 0 : Duration.between(oldest, Instant.now()).toSeconds();
         try {
             cache.size();
             return Health.up()

@@ -1,12 +1,12 @@
 package com.kholodilin.statemachine.persistence;
 
+import java.sql.Timestamp;
+import java.util.Optional;
+
 import com.kholodilin.statemachine.spi.ProcessedStateMachineEvent;
 import com.kholodilin.statemachine.spi.StateMachineEventStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-
-import java.sql.Timestamp;
-import java.util.Optional;
 
 /**
  * JDBC implementation of {@link StateMachineEventStore} against {@code state_machine_event}.
@@ -28,9 +28,7 @@ public final class JdbcStateMachineEventStore implements StateMachineEventStore 
     @Override
     public boolean exists(String eventId) {
         Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM state_machine_event WHERE event_id = ?",
-                Integer.class,
-                eventId);
+                "SELECT COUNT(*) FROM state_machine_event WHERE event_id = ?", Integer.class, eventId);
         return count != null && count > 0;
     }
 
@@ -39,14 +37,11 @@ public final class JdbcStateMachineEventStore implements StateMachineEventStore 
      */
     @Override
     public Optional<ProcessedStateMachineEvent> find(String eventId) {
-        return jdbcTemplate.query(
-                """
+        return jdbcTemplate.query("""
                 SELECT event_id, machine_type, machine_id, event_type, from_state, to_state, result, created_at
                 FROM state_machine_event
                 WHERE event_id = ?
-                """,
-                mapper(),
-                eventId).stream().findFirst();
+                """, mapper(), eventId).stream().findFirst();
     }
 
     /**

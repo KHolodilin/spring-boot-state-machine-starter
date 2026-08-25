@@ -11,7 +11,7 @@ public class EventTypeMismatchException extends RuntimeException {
      * @param actual      runtime class of {@code event.type()}
      */
     public EventTypeMismatchException(String machineType, Class<?> expected, Class<?> actual) {
-        super("Event type " + actual.getName() + " does not match definition " + machineType
-                + " which expects " + expected.getName());
+        super("Event type " + actual.getName() + " does not match definition " + machineType + " which expects "
+                + expected.getName());
     }
 }

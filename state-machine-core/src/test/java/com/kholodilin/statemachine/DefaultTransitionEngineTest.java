@@ -1,15 +1,15 @@
 package com.kholodilin.statemachine;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+
 import com.kholodilin.statemachine.definition.StateMachineDefinition;
 import com.kholodilin.statemachine.engine.DefaultTransitionEngine;
 import com.kholodilin.statemachine.engine.TransitionEngine;
 import com.kholodilin.statemachine.exception.AmbiguousTransitionException;
 import com.kholodilin.statemachine.exception.InvalidDefinitionException;
 import org.junit.jupiter.api.Test;
-
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -18,9 +18,20 @@ class DefaultTransitionEngineTest {
 
     private final TransitionEngine engine = new DefaultTransitionEngine();
 
-    enum OrderState { NEW, PAYMENT_PENDING, INVENTORY_PENDING, COMPLETED, CANCELLED }
+    enum OrderState {
+        NEW,
+        PAYMENT_PENDING,
+        INVENTORY_PENDING,
+        COMPLETED,
+        CANCELLED
+    }
 
-    enum OrderEvent { START, PAYMENT_RESERVED, PAYMENT_REJECTED, INVENTORY_RESERVED }
+    enum OrderEvent {
+        START,
+        PAYMENT_RESERVED,
+        PAYMENT_REJECTED,
+        INVENTORY_RESERVED
+    }
 
     record PaymentReservedPayload(String reservationId, BigDecimal amount) {}
 
@@ -50,22 +61,20 @@ class DefaultTransitionEngineTest {
 
     @Test
     void requiresPayloadRegistrationBeforeTransition() {
-        assertThatThrownBy(() -> StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
-                .initial(OrderState.NEW)
-                .transition()
-                .from(OrderState.NEW)
-                .event(OrderEvent.START))
+        assertThatThrownBy(() -> StateMachineDefinition.builder("order-saga", OrderState.class, OrderEvent.class)
+                        .initial(OrderState.NEW)
+                        .transition()
+                        .from(OrderState.NEW)
+                        .event(OrderEvent.START))
                 .isInstanceOf(InvalidDefinitionException.class)
                 .hasMessageContaining("payload");
     }
 
     @Test
     void duplicatePayloadRegistrationFails() {
-        assertThatThrownBy(() -> StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
-                .payload(OrderEvent.START, Void.class)
-                .payload(OrderEvent.START, Void.class))
+        assertThatThrownBy(() -> StateMachineDefinition.builder("order-saga", OrderState.class, OrderEvent.class)
+                        .payload(OrderEvent.START, Void.class)
+                        .payload(OrderEvent.START, Void.class))
                 .isInstanceOf(InvalidDefinitionException.class);
     }
 
@@ -79,8 +88,8 @@ class DefaultTransitionEngineTest {
 
     @Test
     void successfulTransitionWithContextAndCommand() {
-        StateMachineDefinition<OrderState, OrderEvent> definition = StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
+        StateMachineDefinition<OrderState, OrderEvent> definition = StateMachineDefinition.builder(
+                        "order-saga", OrderState.class, OrderEvent.class)
                 .initial(OrderState.NEW)
                 .payload(OrderEvent.START, Void.class)
                 .payload(OrderEvent.PAYMENT_RESERVED, PaymentReservedPayload.class)
@@ -93,14 +102,15 @@ class DefaultTransitionEngineTest {
                 .from(OrderState.PAYMENT_PENDING)
                 .event(OrderEvent.PAYMENT_RESERVED, PaymentReservedPayload.class)
                 .to(OrderState.INVENTORY_PENDING)
-                .updateContext((ctx, event) -> ctx.put("paymentReservationId", event.payload().reservationId()))
+                .updateContext((ctx, event) ->
+                        ctx.put("paymentReservationId", event.payload().reservationId()))
                 .command(ctx -> new ReserveInventoryCommand(
                         ctx.machineId(),
                         ctx.workflowContext().getString("paymentReservationId").orElseThrow()))
                 .build();
 
-        StateMachineInstance instance = new StateMachineInstance(
-                "order-saga", "order-1", OrderState.PAYMENT_PENDING.name(), Map.of(), 1);
+        StateMachineInstance instance =
+                new StateMachineInstance("order-saga", "order-1", OrderState.PAYMENT_PENDING.name(), Map.of(), 1);
         StateMachineEvent<OrderEvent, PaymentReservedPayload> event = new StateMachineEvent<>(
                 "evt-1", "order-1", OrderEvent.PAYMENT_RESERVED, new PaymentReservedPayload("PAY-9", BigDecimal.TEN));
 
@@ -113,14 +123,15 @@ class DefaultTransitionEngineTest {
         assertThat(success.version()).isEqualTo(2);
         assertThat(success.context()).containsEntry("paymentReservationId", "PAY-9");
         assertThat(success.commands()).hasSize(1);
-        ReserveInventoryCommand command = (ReserveInventoryCommand) success.commands().getFirst();
+        ReserveInventoryCommand command =
+                (ReserveInventoryCommand) success.commands().getFirst();
         assertThat(command.paymentReservationId()).isEqualTo("PAY-9");
     }
 
     @Test
     void zeroCommands() {
-        StateMachineDefinition<OrderState, OrderEvent> definition = StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
+        StateMachineDefinition<OrderState, OrderEvent> definition = StateMachineDefinition.builder(
+                        "order-saga", OrderState.class, OrderEvent.class)
                 .initial(OrderState.NEW)
                 .payload(OrderEvent.PAYMENT_REJECTED, Void.class)
                 .transition()
@@ -128,12 +139,10 @@ class DefaultTransitionEngineTest {
                 .event(OrderEvent.PAYMENT_REJECTED)
                 .to(OrderState.CANCELLED)
                 .build();
-        StateMachineInstance instance = new StateMachineInstance(
-                "order-saga", "order-1", "PAYMENT_PENDING", Map.of(), 0);
+        StateMachineInstance instance =
+                new StateMachineInstance("order-saga", "order-1", "PAYMENT_PENDING", Map.of(), 0);
         TransitionResult result = engine.transition(
-                definition,
-                instance,
-                new StateMachineEvent<>("evt-r", "order-1", OrderEvent.PAYMENT_REJECTED, null));
+                definition, instance, new StateMachineEvent<>("evt-r", "order-1", OrderEvent.PAYMENT_REJECTED, null));
         TransitionResult.Success success = (TransitionResult.Success) result;
         assertThat(success.commands()).isEmpty();
         assertThat(success.toState()).isEqualTo("CANCELLED");
@@ -141,8 +150,8 @@ class DefaultTransitionEngineTest {
 
     @Test
     void multipleCommands() {
-        StateMachineDefinition<OrderState, OrderEvent> definition = StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
+        StateMachineDefinition<OrderState, OrderEvent> definition = StateMachineDefinition.builder(
+                        "order-saga", OrderState.class, OrderEvent.class)
                 .initial(OrderState.NEW)
                 .payload(OrderEvent.START, Void.class)
                 .transition()
@@ -161,8 +170,8 @@ class DefaultTransitionEngineTest {
 
     @Test
     void guardTrueAndFalse() {
-        StateMachineDefinition<OrderState, OrderEvent> definition = StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
+        StateMachineDefinition<OrderState, OrderEvent> definition = StateMachineDefinition.builder(
+                        "order-saga", OrderState.class, OrderEvent.class)
                 .initial(OrderState.NEW)
                 .payload(OrderEvent.PAYMENT_RESERVED, PaymentReservedPayload.class)
                 .transition()
@@ -171,20 +180,26 @@ class DefaultTransitionEngineTest {
                 .when(ctx -> ctx.payload().amount().signum() > 0)
                 .to(OrderState.INVENTORY_PENDING)
                 .build();
-        StateMachineInstance instance = new StateMachineInstance(
-                "order-saga", "order-1", "PAYMENT_PENDING", Map.of(), 0);
+        StateMachineInstance instance =
+                new StateMachineInstance("order-saga", "order-1", "PAYMENT_PENDING", Map.of(), 0);
 
         TransitionResult success = engine.transition(
                 definition,
                 instance,
-                new StateMachineEvent<>("ok", "order-1", OrderEvent.PAYMENT_RESERVED,
+                new StateMachineEvent<>(
+                        "ok",
+                        "order-1",
+                        OrderEvent.PAYMENT_RESERVED,
                         new PaymentReservedPayload("PAY", BigDecimal.ONE)));
         assertThat(success.outcome()).isEqualTo(TransitionOutcome.SUCCESS);
 
         TransitionResult rejected = engine.transition(
                 definition,
                 instance,
-                new StateMachineEvent<>("bad", "order-1", OrderEvent.PAYMENT_RESERVED,
+                new StateMachineEvent<>(
+                        "bad",
+                        "order-1",
+                        OrderEvent.PAYMENT_RESERVED,
                         new PaymentReservedPayload("PAY", BigDecimal.ZERO)));
         assertThat(rejected).isInstanceOf(TransitionResult.Rejected.class);
         assertThat(((TransitionResult.Rejected) rejected).reason()).isEqualTo(RejectedReason.GUARD_NOT_MATCHED);
@@ -192,8 +207,8 @@ class DefaultTransitionEngineTest {
 
     @Test
     void ambiguityThrows() {
-        StateMachineDefinition<OrderState, OrderEvent> definition = StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
+        StateMachineDefinition<OrderState, OrderEvent> definition = StateMachineDefinition.builder(
+                        "order-saga", OrderState.class, OrderEvent.class)
                 .initial(OrderState.NEW)
                 .payload(OrderEvent.START, Void.class)
                 .transition()
@@ -208,9 +223,9 @@ class DefaultTransitionEngineTest {
                 .to(OrderState.CANCELLED)
                 .build();
         assertThatThrownBy(() -> engine.transition(
-                definition,
-                new StateMachineInstance("order-saga", "order-1", "NEW", Map.of(), 0),
-                new StateMachineEvent<>("evt", "order-1", OrderEvent.START, null)))
+                        definition,
+                        new StateMachineInstance("order-saga", "order-1", "NEW", Map.of(), 0),
+                        new StateMachineEvent<>("evt", "order-1", OrderEvent.START, null)))
                 .isInstanceOf(AmbiguousTransitionException.class);
     }
 
@@ -244,8 +259,7 @@ class DefaultTransitionEngineTest {
     }
 
     private static StateMachineDefinition<OrderState, OrderEvent> emptyStartDefinition() {
-        return StateMachineDefinition
-                .builder("order-saga", OrderState.class, OrderEvent.class)
+        return StateMachineDefinition.builder("order-saga", OrderState.class, OrderEvent.class)
                 .initial(OrderState.NEW)
                 .payload(OrderEvent.START, Void.class)
                 .transition()

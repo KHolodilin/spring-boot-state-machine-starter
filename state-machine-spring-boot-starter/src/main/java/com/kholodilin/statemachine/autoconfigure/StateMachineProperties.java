@@ -1,8 +1,8 @@
 package com.kholodilin.statemachine.autoconfigure;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
 import java.time.Duration;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * Configuration bound from {@code state-machine.*}. Field comments are exported to

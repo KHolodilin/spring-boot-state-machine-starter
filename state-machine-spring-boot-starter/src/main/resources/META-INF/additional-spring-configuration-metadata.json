@@ -1,0 +1,29 @@
+{
+  "properties": [
+    {
+      "name": "state-machine.persistence.schema.mode",
+      "type": "java.lang.String",
+      "defaultValue": "validate",
+      "description": "How the starter treats library tables at startup: create missing tables, validate an existing schema, or leave DDL to Flyway/Liquibase."
+    }
+  ],
+  "hints": [
+    {
+      "name": "state-machine.persistence.schema.mode",
+      "values": [
+        {
+          "value": "create",
+          "description": "Create missing tables from state-machine-schema.sql. Use in demo and tests."
+        },
+        {
+          "value": "validate",
+          "description": "Fail fast if tables, columns, keys or the recovery index do not match. Recommended in production when the starter owns schema checks."
+        },
+        {
+          "value": "none",
+          "description": "Do not touch schema. Use when Flyway or Liquibase applies docs/state-machine-schema.sql."
+        }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,5 @@
 package com.kholodilin.statemachine.queue;
 
-import com.kholodilin.statemachine.spi.StateMachineDispatchQueue;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +7,8 @@ import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import com.kholodilin.statemachine.spi.StateMachineDispatchQueue;
 
 /**
  * In-memory {@link StateMachineDispatchQueue}: one {@link ArrayBlockingQueue} per worker partition.

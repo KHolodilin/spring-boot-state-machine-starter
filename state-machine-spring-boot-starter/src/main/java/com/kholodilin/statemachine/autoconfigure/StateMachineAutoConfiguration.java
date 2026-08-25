@@ -1,5 +1,9 @@
 package com.kholodilin.statemachine.autoconfigure;
 
+import java.util.List;
+import java.util.Locale;
+import javax.sql.DataSource;
+
 import com.kholodilin.statemachine.StateMachineRegistry;
 import com.kholodilin.statemachine.StateMachineService;
 import com.kholodilin.statemachine.async.StateMachineRecoveryWorker;
@@ -33,7 +37,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -41,15 +44,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.health.contributor.HealthIndicator;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import tools.jackson.databind.json.JsonMapper;
-
-import javax.sql.DataSource;
-import java.util.List;
-import java.util.Locale;
 
 /**
  * Wires definitions, JDBC stores, cache, async workers, metrics and health when {@code state-machine.enabled} is true.
@@ -92,7 +92,8 @@ public class StateMachineAutoConfiguration {
     @Bean(name = "stateMachineSchemaManager")
     @ConditionalOnMissingBean
     StateMachineSchemaManager stateMachineSchemaManager(DataSource dataSource, StateMachineProperties properties) {
-        SchemaMode mode = SchemaMode.valueOf(properties.getPersistence().getSchema().getMode().toUpperCase(Locale.ROOT));
+        SchemaMode mode = SchemaMode.valueOf(
+                properties.getPersistence().getSchema().getMode().toUpperCase(Locale.ROOT));
         StateMachineSchemaManager manager = new StateMachineSchemaManager(dataSource, mode);
         manager.apply();
         return manager;
@@ -163,8 +164,7 @@ public class StateMachineAutoConfiguration {
             return new NoOpStateMachineCache();
         }
         return new CaffeineStateMachineCache(
-                properties.getCache().getMaxSize(),
-                properties.getCache().getExpireAfterAccess());
+                properties.getCache().getMaxSize(), properties.getCache().getExpireAfterAccess());
     }
 
     /**
@@ -175,7 +175,8 @@ public class StateMachineAutoConfiguration {
     @ConditionalOnMissingBean
     StateMachineDispatchQueue stateMachineDispatchQueue(StateMachineProperties properties) {
         int workers = Math.max(1, properties.getAsync().getWorkers());
-        return new PartitionedMemoryDispatchQueue(workers, properties.getAsync().getQueue().getCapacity());
+        return new PartitionedMemoryDispatchQueue(
+                workers, properties.getAsync().getQueue().getCapacity());
     }
 
     /**
@@ -198,9 +199,7 @@ public class StateMachineAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     StateMachineMetrics stateMachineMetrics(
-            ObjectProvider<MeterRegistry> registries,
-            StateMachineCache cache,
-            StateMachineDispatchQueue queue) {
+            ObjectProvider<MeterRegistry> registries, StateMachineCache cache, StateMachineDispatchQueue queue) {
         MeterRegistry registry = registries.getIfAvailable(SimpleMeterRegistry::new);
         return new StateMachineMetrics(registry, cache, queue);
     }
@@ -238,7 +237,7 @@ public class StateMachineAutoConfiguration {
                 dispatchQueue,
                 jsonMaps,
                 metrics,
-                observations.getIfAvailable(() -> ObservationRegistry.NOOP),
+                tracingRegistry(observations, properties),
                 properties);
     }
 
@@ -258,12 +257,14 @@ public class StateMachineAutoConfiguration {
      * @return worker pool lifecycle
      */
     @Bean
-    @ConditionalOnProperty(prefix = "state-machine.async", name = "enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(
+            prefix = "state-machine.async",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = true)
     @ConditionalOnMissingBean
     StateMachineWorkerPool stateMachineWorkerPool(
-            StateMachineDispatchQueue queue,
-            DefaultStateMachineService service,
-            StateMachineProperties properties) {
+            StateMachineDispatchQueue queue, DefaultStateMachineService service, StateMachineProperties properties) {
         return new StateMachineWorkerPool(queue, service, properties.getAsync().getWorkers());
     }
 
@@ -273,7 +274,11 @@ public class StateMachineAutoConfiguration {
      * @return scheduled recovery job
      */
     @Bean
-    @ConditionalOnProperty(prefix = "state-machine.async.recovery", name = "enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(
+            prefix = "state-machine.async.recovery",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = true)
     @ConditionalOnMissingBean
     StateMachineRecoveryWorker stateMachineRecoveryWorker(
             StateMachineRequestStore requestStore,
@@ -281,7 +286,12 @@ public class StateMachineAutoConfiguration {
             StateMachineMetrics metrics,
             StateMachineProperties properties) {
         return new StateMachineRecoveryWorker(
-                requestStore, queue, metrics, properties.getAsync().getRecovery().getBatchSize());
+                requestStore,
+                queue,
+                metrics,
+                properties.getInstanceId(),
+                properties.getAsync().getLeaseDuration(),
+                properties.getAsync().getRecovery().getBatchSize());
     }
 
     /**
@@ -290,9 +300,14 @@ public class StateMachineAutoConfiguration {
      * @return distribution metrics
      */
     @Bean
-    @ConditionalOnProperty(prefix = "state-machine.observability.metrics", name = "enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(
+            prefix = "state-machine.observability.metrics",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = true)
     @ConditionalOnMissingBean
-    StateDistributionMetrics stateDistributionMetrics(JdbcTemplate jdbcTemplate, ObjectProvider<MeterRegistry> registries) {
+    StateDistributionMetrics stateDistributionMetrics(
+            JdbcTemplate jdbcTemplate, ObjectProvider<MeterRegistry> registries) {
         return new StateDistributionMetrics(jdbcTemplate, registries.getIfAvailable(SimpleMeterRegistry::new));
     }
 
@@ -303,7 +318,11 @@ public class StateMachineAutoConfiguration {
      */
     @Bean
     @ConditionalOnClass(HealthIndicator.class)
-    @ConditionalOnProperty(prefix = "state-machine.observability.health", name = "enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(
+            prefix = "state-machine.observability.health",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = true)
     @ConditionalOnMissingBean(name = "stateMachineHealthIndicator")
     StateMachineHealthIndicator stateMachineHealthIndicator(
             StateMachineCache cache,
@@ -317,5 +336,16 @@ public class StateMachineAutoConfiguration {
                 workers.getIfAvailable(),
                 requestStore,
                 properties.getAsync().getRecovery().isEnabled());
+    }
+
+    /**
+     * {@link ObservationRegistry#NOOP} when {@code state-machine.observability.tracing.enabled} is {@code false}.
+     */
+    static ObservationRegistry tracingRegistry(
+            ObjectProvider<ObservationRegistry> observations, StateMachineProperties properties) {
+        if (!properties.getObservability().getTracing().isEnabled()) {
+            return ObservationRegistry.NOOP;
+        }
+        return observations.getIfAvailable(() -> ObservationRegistry.NOOP);
     }
 }

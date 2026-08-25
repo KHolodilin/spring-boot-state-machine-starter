@@ -1,10 +1,5 @@
 package com.kholodilin.statemachine.definition;
 
-import com.kholodilin.statemachine.ContextUpdater;
-import com.kholodilin.statemachine.Guard;
-import com.kholodilin.statemachine.StateMachineCommandFactory;
-import com.kholodilin.statemachine.exception.InvalidDefinitionException;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -12,6 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+
+import com.kholodilin.statemachine.ContextUpdater;
+import com.kholodilin.statemachine.Guard;
+import com.kholodilin.statemachine.StateMachineCommandFactory;
+import com.kholodilin.statemachine.exception.InvalidDefinitionException;
 
 /**
  * Static description of states, events and transitions. Created at application startup, never loaded from DB.
@@ -144,9 +144,7 @@ public final class StateMachineDefinition<S extends Enum<S>, E extends Enum<E>> 
      * @return builder
      */
     public static <S extends Enum<S>, E extends Enum<E>> Builder<S, E> builder(
-            String machineType,
-            Class<S> stateType,
-            Class<E> eventType) {
+            String machineType, Class<S> stateType, Class<E> eventType) {
         return new Builder<>(machineType, stateType, eventType);
     }
 
@@ -218,9 +216,8 @@ public final class StateMachineDefinition<S extends Enum<S>, E extends Enum<E>> 
             }
             for (Transition<S, E, ?> transition : transitions) {
                 if (!payloadTypes.containsKey(transition.event())) {
-                    throw new InvalidDefinitionException(
-                            "Event " + transition.event() + " is used in a transition but has no .payload(...) on machine "
-                                    + machineType);
+                    throw new InvalidDefinitionException("Event " + transition.event()
+                            + " is used in a transition but has no .payload(...) on machine " + machineType);
                 }
             }
             return new StateMachineDefinition<>(
@@ -244,9 +241,8 @@ public final class StateMachineDefinition<S extends Enum<S>, E extends Enum<E>> 
         <P> Class<P> requirePayload(E event) {
             Class<?> type = payloadTypes.get(event);
             if (type == null) {
-                throw new InvalidDefinitionException(
-                        "Register .payload(" + event + ", payloadClass) before using the event in a transition on machine "
-                                + machineType);
+                throw new InvalidDefinitionException("Register .payload(" + event
+                        + ", payloadClass) before using the event in a transition on machine " + machineType);
             }
             return (Class<P>) type;
         }
@@ -315,8 +311,8 @@ public final class StateMachineDefinition<S extends Enum<S>, E extends Enum<E>> 
             Class<?> registered = parent.requirePayload(event);
             if (!registered.equals(payloadClass)) {
                 throw new InvalidDefinitionException(
-                        "Payload class " + payloadClass.getName() + " does not match registered "
-                                + registered.getName() + " for event " + event + " on machine " + parent.machineType);
+                        "Payload class " + payloadClass.getName() + " does not match registered " + registered.getName()
+                                + " for event " + event + " on machine " + parent.machineType);
             }
             return new TransitionSpec<>(parent, from, event, payloadClass);
         }

@@ -17,7 +17,5 @@ public interface TransitionEngine {
      * @return success or rejected; never duplicate
      */
     TransitionResult transition(
-            StateMachineDefinition<?, ?> definition,
-            StateMachineInstance instance,
-            StateMachineEvent<?, ?> event);
+            StateMachineDefinition<?, ?> definition, StateMachineInstance instance, StateMachineEvent<?, ?> event);
 }

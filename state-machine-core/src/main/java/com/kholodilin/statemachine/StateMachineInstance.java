@@ -13,12 +13,7 @@ import java.util.Objects;
  * @param version     optimistic-lock version
  */
 public record StateMachineInstance(
-        String machineType,
-        String machineId,
-        String state,
-        Map<String, Object> context,
-        long version
-) {
+        String machineType, String machineId, String state, Map<String, Object> context, long version) {
 
     /**
      * Copies {@code context} defensively.

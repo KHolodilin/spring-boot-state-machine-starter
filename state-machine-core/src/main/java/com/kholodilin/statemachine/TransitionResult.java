@@ -57,8 +57,8 @@ public sealed interface TransitionResult
             String toState,
             long version,
             List<StateMachineCommand> commands,
-            Map<String, Object> context
-    ) implements TransitionResult {
+            Map<String, Object> context)
+            implements TransitionResult {
 
         public Success {
             Objects.requireNonNull(machineType, "machineType");
@@ -91,13 +91,8 @@ public sealed interface TransitionResult
      * @param toState     states stored with the first processing
      */
     record Duplicate(
-            String machineType,
-            String machineId,
-            String eventId,
-            String eventType,
-            String fromState,
-            String toState
-    ) implements TransitionResult {
+            String machineType, String machineId, String eventId, String eventType, String fromState, String toState)
+            implements TransitionResult {
 
         public Duplicate {
             Objects.requireNonNull(machineType, "machineType");
@@ -129,13 +124,8 @@ public sealed interface TransitionResult
      * @param reason      why the engine rejected the event
      */
     record Rejected(
-            String machineType,
-            String machineId,
-            String eventId,
-            String eventType,
-            String state,
-            RejectedReason reason
-    ) implements TransitionResult {
+            String machineType, String machineId, String eventId, String eventType, String state, RejectedReason reason)
+            implements TransitionResult {
 
         public Rejected {
             Objects.requireNonNull(machineType, "machineType");

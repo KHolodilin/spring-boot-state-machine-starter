@@ -1,9 +1,9 @@
 package com.kholodilin.statemachine.cache;
 
+import java.util.Optional;
+
 import com.kholodilin.statemachine.StateMachineInstance;
 import com.kholodilin.statemachine.spi.StateMachineCache;
-
-import java.util.Optional;
 
 /**
  * Cache used when {@code state-machine.cache.enabled} is {@code false}. Every lookup is a miss.

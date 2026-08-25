@@ -1,8 +1,11 @@
 # spring-boot-state-machine-starter
 
-![Java](https://img.shields.io/badge/Java-21-blue)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-green)
-![License](https://img.shields.io/badge/License-Apache%202.0-lightgrey)
+[![CI](https://github.com/KHolodilin/spring-boot-state-machine-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/KHolodilin/spring-boot-state-machine-starter/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/KHolodilin/spring-boot-state-machine-starter/branch/main/graph/badge.svg)](https://codecov.io/gh/KHolodilin/spring-boot-state-machine-starter)
+[![Maven Central](https://img.shields.io/maven-central/v/com.kholodilin/state-machine-spring-boot-starter.svg?label=maven-central)](https://central.sonatype.com/artifact/com.kholodilin/state-machine-spring-boot-starter)
+[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 Lightweight persistent state machine for Spring Boot with PostgreSQL durability, synchronous and asynchronous events, in-memory hot state cache, event idempotency and command-based workflow orchestration.
 
@@ -42,19 +45,29 @@ CURRENT STATE + EVENT + optional GUARD
 
 PostgreSQL is the durable source of truth. RAM is a cache. `eventId` is the idempotency key. Commands describe *what* should happen next; Outbox (optional, your adapter) describes *how* to deliver it.
 
-```text
-send() / sendAsync()
-        |
-        v
-advisory lock + eventId check
-        |
-        v
-TransitionEngine
-        |
-        +--> state_machine_instance
-        +--> state_machine_event
-        +--> CommandPublisher  (same JDBC TX)
+```mermaid
+flowchart LR
+    subgraph app [Application]
+      Send["send() / sendAsync()"]
+      Svc[StateMachineService]
+      Eng[TransitionEngine]
+      Pub[CommandPublisher]
+      Q[In-memory queue]
+      W[Workers]
+      Rec[RecoveryWorker]
+    end
+    PG[(PostgreSQL)]
+    Send --> Svc
+    Svc --> Eng
+    Svc --> PG
+    Eng --> Pub
+    Send -->|sendAsync| Q
+    Q --> W --> Svc
+    Rec --> PG
+    Rec --> Q
 ```
+
+`send()` takes an advisory lock, checks `eventId`, runs the engine and persists instance + event + commands in one JDBC transaction.
 
 `sendAsync()` first inserts `state_machine_request`, then a partitioned in-memory queue and workers process it. Recovery re-offers durable requests if the queue was lost.
 
@@ -227,6 +240,13 @@ Build:
 
 ```bash
 mvn verify
+```
+
+Demo (PostgreSQL via Docker):
+
+```bash
+docker compose -f state-machine-demo/docker-compose.yml up -d
+mvn -pl state-machine-demo -am spring-boot:run
 ```
 
 ## License

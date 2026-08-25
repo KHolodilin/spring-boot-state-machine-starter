@@ -1,14 +1,15 @@
 package com.kholodilin.statemachine.persistence;
 
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
 import com.kholodilin.statemachine.spi.StateMachineRequest;
 import com.kholodilin.statemachine.spi.StateMachineRequestStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * JDBC implementation of {@link StateMachineRequestStore} against {@code state_machine_request}.
@@ -55,10 +56,8 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
      */
     @Override
     public Optional<StateMachineRequest> findById(long id) {
-        return jdbcTemplate.query(
-                "SELECT * FROM state_machine_request WHERE id = ?",
-                mapper(),
-                id).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM state_machine_request WHERE id = ?", mapper(), id).stream()
+                .findFirst();
     }
 
     /**
@@ -66,10 +65,8 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
      */
     @Override
     public Optional<StateMachineRequest> findByEventId(String eventId) {
-        return jdbcTemplate.query(
-                "SELECT * FROM state_machine_request WHERE event_id = ?",
-                mapper(),
-                eventId).stream().findFirst();
+        return jdbcTemplate.query("SELECT * FROM state_machine_request WHERE event_id = ?", mapper(), eventId).stream()
+                .findFirst();
     }
 
     /**
@@ -158,15 +155,27 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
      * {@inheritDoc}
      */
     @Override
-    public void markDone(long id) {
+    public void clearLease(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
         jdbcTemplate.update(
-                """
+                "UPDATE state_machine_request SET locked_by = NULL, locked_until = NULL WHERE id IN (" + placeholders
+                        + ")",
+                ids.toArray());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void markDone(long id) {
+        jdbcTemplate.update("""
                 UPDATE state_machine_request
                 SET status = ?, processed_at = NOW(), locked_by = NULL, locked_until = NULL
                 WHERE id = ?
-                """,
-                StateMachineRequest.DONE,
-                id);
+                """, StateMachineRequest.DONE, id);
     }
 
     /**
@@ -174,15 +183,11 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
      */
     @Override
     public void markFailed(long id, int retryCount) {
-        jdbcTemplate.update(
-                """
+        jdbcTemplate.update("""
                 UPDATE state_machine_request
                 SET status = ?, retry_count = ?, locked_by = NULL, locked_until = NULL
                 WHERE id = ?
-                """,
-                StateMachineRequest.FAILED,
-                retryCount,
-                id);
+                """, StateMachineRequest.FAILED, retryCount, id);
     }
 
     /**
@@ -190,14 +195,11 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
      */
     @Override
     public void markDead(long id) {
-        jdbcTemplate.update(
-                """
+        jdbcTemplate.update("""
                 UPDATE state_machine_request
                 SET status = ?, processed_at = NOW(), locked_by = NULL, locked_until = NULL
                 WHERE id = ?
-                """,
-                StateMachineRequest.DEAD,
-                id);
+                """, StateMachineRequest.DEAD, id);
     }
 
     /**
@@ -210,9 +212,7 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
                 SELECT MIN(created_at) AS oldest
                 FROM state_machine_request
                 WHERE status < ?
-                """,
-                rs -> rs.next() ? optionalInstant(rs.getTimestamp("oldest")) : null,
-                StateMachineRequest.DONE);
+                """, rs -> rs.next() ? optionalInstant(rs.getTimestamp("oldest")) : null, StateMachineRequest.DONE);
     }
 
     private static Instant optionalInstant(Timestamp timestamp) {

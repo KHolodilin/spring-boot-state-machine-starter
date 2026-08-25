@@ -10,12 +10,7 @@ import java.util.Objects;
  * @param machineId   instance identifier
  * @param requestId   generated {@code state_machine_request.id}
  */
-public record AsyncSubmission(
-        String eventId,
-        String machineType,
-        String machineId,
-        long requestId
-) {
+public record AsyncSubmission(String eventId, String machineType, String machineId, long requestId) {
 
     /**
      * Validates required identifiers.

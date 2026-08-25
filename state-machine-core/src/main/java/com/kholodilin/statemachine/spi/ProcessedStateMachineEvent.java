@@ -23,8 +23,7 @@ public record ProcessedStateMachineEvent(
         String fromState,
         String toState,
         String result,
-        Instant createdAt
-) {
+        Instant createdAt) {
 
     /**
      * Validates required fields.

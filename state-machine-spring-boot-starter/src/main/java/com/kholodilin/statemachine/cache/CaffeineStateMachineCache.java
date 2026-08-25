@@ -1,13 +1,13 @@
 package com.kholodilin.statemachine.cache;
 
+import java.time.Duration;
+import java.util.Optional;
+
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import com.kholodilin.statemachine.StateMachineInstance;
 import com.kholodilin.statemachine.spi.StateMachineCache;
-
-import java.time.Duration;
-import java.util.Optional;
 
 /**
  * Caffeine hot set of instance snapshots. A cache hit still uses optimistic {@code UPDATE ... WHERE version}.

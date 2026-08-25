@@ -14,6 +14,12 @@
     <name>State Machine Demo</name>
     <description>Minimal order-saga demo for the state machine starter.</description>
 
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <jacoco.skip>true</jacoco.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.kholodilin</groupId>
@@ -40,6 +46,18 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <!--
+              Inherited from parent -P release (extensions). Keep skipPublishing so demos
+              never publish to Central; do NOT set extensions=true here — that injects
+              central-publishing on plain deploy (e.g. GitHub Packages workflow).
+            -->
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <configuration>
+                    <skipPublishing>true</skipPublishing>
+                </configuration>
             </plugin>
         </plugins>
     </build>

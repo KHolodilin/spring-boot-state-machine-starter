@@ -1,8 +1,8 @@
 package com.kholodilin.statemachine.spi;
 
-import com.kholodilin.statemachine.StateMachineInstance;
-
 import java.util.Optional;
+
+import com.kholodilin.statemachine.StateMachineInstance;
 
 /**
  * Durable store for instance snapshots ({@code state_machine_instance}).

@@ -1,15 +1,15 @@
 package com.kholodilin.statemachine.async;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import com.kholodilin.statemachine.service.DefaultStateMachineService;
 import com.kholodilin.statemachine.spi.StateMachineDispatchQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * One daemon thread per queue partition. Must not block on remote I/O; transitions emit commands instead.
@@ -29,10 +29,7 @@ public final class StateMachineWorkerPool implements SmartLifecycle {
      * @param service processes request ids
      * @param workers partition count
      */
-    public StateMachineWorkerPool(
-            StateMachineDispatchQueue queue,
-            DefaultStateMachineService service,
-            int workers) {
+    public StateMachineWorkerPool(StateMachineDispatchQueue queue, DefaultStateMachineService service, int workers) {
         this.queue = queue;
         this.service = service;
         this.workers = workers;

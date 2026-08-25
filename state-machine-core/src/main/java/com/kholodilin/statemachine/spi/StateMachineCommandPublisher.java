@@ -1,9 +1,9 @@
 package com.kholodilin.statemachine.spi;
 
+import java.util.Collection;
+
 import com.kholodilin.statemachine.StateMachineCommand;
 import com.kholodilin.statemachine.StateMachineInstance;
-
-import java.util.Collection;
 
 /**
  * Publishes commands produced by a successful transition. Must run in the same JDBC

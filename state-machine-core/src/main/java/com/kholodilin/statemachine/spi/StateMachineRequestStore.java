@@ -38,7 +38,8 @@ public interface StateMachineRequestStore {
     List<StateMachineRequest> findRecoverable(int batchSize);
 
     /**
-     * Claims a batch with {@code FOR UPDATE SKIP LOCKED} and marks them {@code PROCESSING}.
+     * Claims a batch with {@code FOR UPDATE SKIP LOCKED} so two pods do not recover the same rows.
+     * Sets {@code PROCESSING} and a lease; call {@link #clearLease(List)} before offering to the worker queue.
      *
      * @param lockedBy    this process {@code instance-id}
      * @param lockedUntil lease expiry
@@ -46,6 +47,13 @@ public interface StateMachineRequestStore {
      * @return claimed rows
      */
     List<StateMachineRequest> claimRecoverable(String lockedBy, Instant lockedUntil, int batchSize);
+
+    /**
+     * Drops the recovery lease so a worker can {@link #claim(long, String, Instant)} the row.
+     *
+     * @param ids request primary keys; no-op when empty
+     */
+    void clearLease(List<Long> ids);
 
     /**
      * Marks one request {@code PROCESSING} if it is still eligible.

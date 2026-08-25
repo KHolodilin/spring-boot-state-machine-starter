@@ -1,12 +1,12 @@
 package com.kholodilin.statemachine.observability;
 
+import java.util.List;
+
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.MultiGauge;
 import io.micrometer.core.instrument.Tags;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
-
-import java.util.List;
 
 /**
  * Gauge {@code state_machine_state_count} grouped by {@code machineType} and {@code state}.
@@ -38,8 +38,7 @@ public final class StateDistributionMetrics {
                     GROUP BY machine_type, state
                     """,
                     (rs, rowNum) -> MultiGauge.Row.of(
-                            Tags.of("machineType", rs.getString(1), "state", rs.getString(2)),
-                            rs.getLong(3)));
+                            Tags.of("machineType", rs.getString(1), "state", rs.getString(2)), rs.getLong(3)));
             gauge.register(rows, true);
         } catch (RuntimeException ignored) {
             // schema may not be ready, or datasource already closed

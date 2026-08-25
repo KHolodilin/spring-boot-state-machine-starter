@@ -1,14 +1,14 @@
 package com.kholodilin.statemachine;
 
-import com.kholodilin.statemachine.definition.StateMachineDefinition;
-import com.kholodilin.statemachine.exception.InvalidDefinitionException;
-import com.kholodilin.statemachine.exception.UnknownMachineTypeException;
-
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import com.kholodilin.statemachine.definition.StateMachineDefinition;
+import com.kholodilin.statemachine.exception.InvalidDefinitionException;
+import com.kholodilin.statemachine.exception.UnknownMachineTypeException;
 
 /**
  * Lookup of static {@link StateMachineDefinition} beans by {@code machineType}.
@@ -48,8 +48,7 @@ public interface StateMachineRegistry {
             for (StateMachineDefinition<?, ?> definition : definitions) {
                 StateMachineDefinition<?, ?> previous = byType.put(definition.machineType(), definition);
                 if (previous != null) {
-                    throw new InvalidDefinitionException(
-                            "Duplicate machineType '" + definition.machineType() + "'");
+                    throw new InvalidDefinitionException("Duplicate machineType '" + definition.machineType() + "'");
                 }
             }
             this.definitions = Map.copyOf(byType);

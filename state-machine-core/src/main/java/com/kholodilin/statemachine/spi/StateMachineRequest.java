@@ -31,8 +31,7 @@ public record StateMachineRequest(
         String lockedBy,
         Instant lockedUntil,
         Instant createdAt,
-        Instant processedAt
-) {
+        Instant processedAt) {
 
     /** Not yet claimed by a worker. */
     public static final int NEW = 0;

@@ -1,5 +1,7 @@
 package com.kholodilin.statemachine.demo;
 
+import java.util.UUID;
+
 import com.kholodilin.statemachine.StateMachineEvent;
 import com.kholodilin.statemachine.StateMachineService;
 import com.kholodilin.statemachine.TransitionResult;
@@ -9,8 +11,6 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.UUID;
 
 /**
  * Optional startup script controlled by {@code demo.auto-run}.
@@ -34,10 +34,7 @@ public class DemoRunner {
             TransitionResult started = service.send(
                     "order-saga",
                     new StateMachineEvent<>(
-                            UUID.randomUUID().toString(),
-                            orderId,
-                            OrderSagaConfiguration.OrderEvent.START,
-                            null));
+                            UUID.randomUUID().toString(), orderId, OrderSagaConfiguration.OrderEvent.START, null));
             log.info("START -> {}", started.outcome());
             TransitionResult reserved = service.send(
                     "order-saga",

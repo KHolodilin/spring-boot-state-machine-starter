@@ -16,8 +16,8 @@ public record DefaultTransitionContext<S extends Enum<S>, E extends Enum<E>, P>(
         String machineId,
         S currentState,
         StateMachineContext workflowContext,
-        StateMachineEvent<E, P> event
-) implements TransitionContext<S, E, P> {
+        StateMachineEvent<E, P> event)
+        implements TransitionContext<S, E, P> {
 
     /**
      * Validates required fields.

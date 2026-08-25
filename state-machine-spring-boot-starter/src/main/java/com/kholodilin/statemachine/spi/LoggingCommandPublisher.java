@@ -1,11 +1,11 @@
 package com.kholodilin.statemachine.spi;
 
+import java.util.Collection;
+
 import com.kholodilin.statemachine.StateMachineCommand;
 import com.kholodilin.statemachine.StateMachineInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Collection;
 
 /**
  * Default publisher that logs commands. Replace with a transactional Outbox publisher in production.

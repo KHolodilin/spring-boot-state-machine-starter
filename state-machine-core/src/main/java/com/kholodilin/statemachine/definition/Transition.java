@@ -1,10 +1,10 @@
 package com.kholodilin.statemachine.definition;
 
+import java.util.List;
+
 import com.kholodilin.statemachine.ContextUpdater;
 import com.kholodilin.statemachine.Guard;
 import com.kholodilin.statemachine.StateMachineCommandFactory;
-
-import java.util.List;
 
 /**
  * Static transition: from + event + optional guard -&gt; to + optional context update + 0..N commands.
@@ -24,8 +24,7 @@ public record Transition<S extends Enum<S>, E extends Enum<E>, P>(
         Guard<S, E, P> guard,
         S to,
         ContextUpdater<E, P> contextUpdater,
-        List<StateMachineCommandFactory<S, E, P>> commandFactories
-) {
+        List<StateMachineCommandFactory<S, E, P>> commandFactories) {
 
     /**
      * Copies {@code commandFactories} defensively.
