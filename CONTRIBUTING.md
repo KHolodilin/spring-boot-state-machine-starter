@@ -32,6 +32,8 @@ The build runs all checks:
 
 Keep pull requests focused: one logical change per PR is much easier to review.
 
+By participating, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## Reporting bugs and requesting features
 
 Use the [issue templates](https://github.com/KHolodilin/spring-boot-state-machine-starter/issues/new/choose).
