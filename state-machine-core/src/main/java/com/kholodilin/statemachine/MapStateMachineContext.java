@@ -14,18 +14,31 @@ public final class MapStateMachineContext implements StateMachineContext {
 
     private final Map<String, Object> values;
 
+    /**
+     * @param values copied; {@code null} becomes empty
+     */
     public MapStateMachineContext(Map<String, Object> values) {
         this.values = new LinkedHashMap<>(values == null ? Map.of() : values);
     }
 
+    /**
+     * @return empty context
+     */
     public static MapStateMachineContext empty() {
         return new MapStateMachineContext(Map.of());
     }
 
+    /**
+     * @param values source map, copied
+     * @return new context
+     */
     public static MapStateMachineContext copyOf(Map<String, Object> values) {
         return new MapStateMachineContext(values);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<String> getString(String key) {
         Object value = values.get(key);
@@ -35,16 +48,25 @@ public final class MapStateMachineContext implements StateMachineContext {
         return Optional.of(String.valueOf(value));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<Integer> getInt(String key) {
         return number(key).map(Number::intValue);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<Long> getLong(String key) {
         return number(key).map(Number::longValue);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<Boolean> getBoolean(String key) {
         Object value = values.get(key);
@@ -57,6 +79,9 @@ public final class MapStateMachineContext implements StateMachineContext {
         return Optional.empty();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public <T> Optional<T> get(String key, Class<T> type) {
         Objects.requireNonNull(type, "type");
@@ -67,6 +92,9 @@ public final class MapStateMachineContext implements StateMachineContext {
         return Optional.empty();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public StateMachineContext put(String key, Object value) {
         Objects.requireNonNull(key, "key");
@@ -74,12 +102,18 @@ public final class MapStateMachineContext implements StateMachineContext {
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public StateMachineContext remove(String key) {
         values.remove(key);
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Map<String, Object> asMap() {
         return Collections.unmodifiableMap(new LinkedHashMap<>(values));

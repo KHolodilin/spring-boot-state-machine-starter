@@ -10,6 +10,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import java.util.List;
 
+/**
+ * Re-offers {@code NEW}, {@code FAILED} and expired {@code PROCESSING} rows to the in-memory queue.
+ * Does not run the transition engine itself.
+ */
 public final class StateMachineRecoveryWorker {
 
     private static final Logger log = LoggerFactory.getLogger(StateMachineRecoveryWorker.class);
@@ -19,6 +23,12 @@ public final class StateMachineRecoveryWorker {
     private final StateMachineMetrics metrics;
     private final int batchSize;
 
+    /**
+     * @param requestStore durable requests
+     * @param queue        in-memory fast path
+     * @param metrics      recovery counter
+     * @param batchSize    rows per scan
+     */
     public StateMachineRecoveryWorker(
             StateMachineRequestStore requestStore,
             StateMachineDispatchQueue queue,
@@ -30,6 +40,9 @@ public final class StateMachineRecoveryWorker {
         this.batchSize = batchSize;
     }
 
+    /**
+     * Scheduled by {@code state-machine.async.recovery.interval}.
+     */
     @Scheduled(fixedDelayString = "${state-machine.async.recovery.interval:10s}")
     public void recover() {
         try {

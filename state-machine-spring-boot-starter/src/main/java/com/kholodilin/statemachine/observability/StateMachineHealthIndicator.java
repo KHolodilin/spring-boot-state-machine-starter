@@ -10,6 +10,9 @@ import org.springframework.boot.health.contributor.HealthIndicator;
 import java.time.Duration;
 import java.time.Instant;
 
+/**
+ * Actuator indicator {@code stateMachine}: cache/queue size and oldest pending request age.
+ */
 public final class StateMachineHealthIndicator implements HealthIndicator {
 
     private final StateMachineCache cache;
@@ -18,6 +21,13 @@ public final class StateMachineHealthIndicator implements HealthIndicator {
     private final StateMachineRequestStore requestStore;
     private final boolean recoveryEnabled;
 
+    /**
+     * @param cache           hot set
+     * @param queue           in-memory dispatch
+     * @param workerPool      {@code null} when async is disabled
+     * @param requestStore    for oldest pending age
+     * @param recoveryEnabled whether recovery is scheduled
+     */
     public StateMachineHealthIndicator(
             StateMachineCache cache,
             StateMachineDispatchQueue queue,
@@ -31,6 +41,9 @@ public final class StateMachineHealthIndicator implements HealthIndicator {
         this.recoveryEnabled = recoveryEnabled;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Health health() {
         Instant oldest = requestStore.oldestPendingCreatedAt();

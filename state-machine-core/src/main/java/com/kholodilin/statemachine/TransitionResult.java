@@ -10,16 +10,44 @@ import java.util.Objects;
 public sealed interface TransitionResult
         permits TransitionResult.Success, TransitionResult.Duplicate, TransitionResult.Rejected {
 
+    /**
+     * @return definition name
+     */
     String machineType();
 
+    /**
+     * @return instance identifier
+     */
     String machineId();
 
+    /**
+     * @return idempotency key of the processed event
+     */
     String eventId();
 
+    /**
+     * @return event enum name
+     */
     String eventType();
 
+    /**
+     * @return success, duplicate or rejected
+     */
     TransitionOutcome outcome();
 
+    /**
+     * State changed and commands were produced.
+     *
+     * @param machineType definition name
+     * @param machineId   instance identifier
+     * @param eventId     processed event
+     * @param eventType   event enum name
+     * @param fromState   state before the transition
+     * @param toState     state after the transition
+     * @param version     optimistic-lock version after persist
+     * @param commands    intents to publish in the same transaction
+     * @param context     workflow context after {@code ContextUpdater}
+     */
     record Success(
             String machineType,
             String machineId,
@@ -43,12 +71,25 @@ public sealed interface TransitionResult
             context = context == null ? Map.of() : Map.copyOf(context);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public TransitionOutcome outcome() {
             return TransitionOutcome.SUCCESS;
         }
     }
 
+    /**
+     * This {@code eventId} was already recorded. Not an application error.
+     *
+     * @param machineType definition name
+     * @param machineId   instance identifier
+     * @param eventId     original event
+     * @param eventType   original event type
+     * @param fromState   states stored with the first processing
+     * @param toState     states stored with the first processing
+     */
     record Duplicate(
             String machineType,
             String machineId,
@@ -67,12 +108,26 @@ public sealed interface TransitionResult
             Objects.requireNonNull(toState, "toState");
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public TransitionOutcome outcome() {
             return TransitionOutcome.DUPLICATE;
         }
     }
 
+    /**
+     * No matching transition, or every matching guard returned {@code false}.
+     * The event is still written to history so a later send of the same {@code eventId} is {@code Duplicate}.
+     *
+     * @param machineType definition name
+     * @param machineId   instance identifier
+     * @param eventId     processed event
+     * @param eventType   event enum name
+     * @param state       current instance state (unchanged)
+     * @param reason      why the engine rejected the event
+     */
     record Rejected(
             String machineType,
             String machineId,
@@ -91,6 +146,9 @@ public sealed interface TransitionResult
             Objects.requireNonNull(reason, "reason");
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public TransitionOutcome outcome() {
             return TransitionOutcome.REJECTED;

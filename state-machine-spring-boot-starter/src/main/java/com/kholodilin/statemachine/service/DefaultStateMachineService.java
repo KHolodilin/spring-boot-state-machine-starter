@@ -37,6 +37,9 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Transactional {@link StateMachineService}: advisory lock, idempotency, engine, persist and command publish.
+ */
 public class DefaultStateMachineService implements StateMachineService {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultStateMachineService.class);
@@ -55,6 +58,21 @@ public class DefaultStateMachineService implements StateMachineService {
     private final ObservationRegistry observationRegistry;
     private final StateMachineProperties properties;
 
+    /**
+     * @param registry             definitions
+     * @param engine               pure calculator
+     * @param store                instances
+     * @param eventStore           history / idempotency
+     * @param requestStore         async intake
+     * @param cache                hot set
+     * @param instanceLock         per-instance serialization
+     * @param commandPublisher     same-TX command sink
+     * @param dispatchQueue        async fast path
+     * @param jsonMaps             payload JSON
+     * @param metrics              Micrometer
+     * @param observationRegistry  tracing; {@link ObservationRegistry#NOOP} when tracing is off
+     * @param properties           leases and retries
+     */
     public DefaultStateMachineService(
             StateMachineRegistry registry,
             TransitionEngine engine,
@@ -84,6 +102,9 @@ public class DefaultStateMachineService implements StateMachineService {
         this.properties = properties;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public <E, P> TransitionResult send(String machineType, StateMachineEvent<E, P> event) {
@@ -94,6 +115,9 @@ public class DefaultStateMachineService implements StateMachineService {
         return result;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public <E, P> AsyncSubmission sendAsync(String machineType, StateMachineEvent<E, P> event) {
@@ -132,6 +156,12 @@ public class DefaultStateMachineService implements StateMachineService {
         return new AsyncSubmission(event.eventId(), machineType, event.machineId(), requestId);
     }
 
+    /**
+     * Worker entry: claim a durable request, deserialize payload and call {@link #send}.
+     *
+     * @param requestId {@code state_machine_request.id}
+     * @return transition result, or {@code null} if skipped (missing, terminal, or lost the claim)
+     */
     @Transactional
     public TransitionResult processRequest(long requestId) {
         Optional<StateMachineRequest> loaded = requestStore.findById(requestId);
@@ -168,6 +198,13 @@ public class DefaultStateMachineService implements StateMachineService {
         }
     }
 
+    /**
+     * Lock, idempotency lookup, engine, persist. Called by {@link #send}.
+     *
+     * @param machineType definition name
+     * @param event       incoming event
+     * @return success, duplicate or rejected
+     */
     TransitionResult processEvent(String machineType, StateMachineEvent<?, ?> event) {
         StateMachineDefinition<?, ?> definition = registry.getRequired(machineType);
         validateEvent(definition, event);

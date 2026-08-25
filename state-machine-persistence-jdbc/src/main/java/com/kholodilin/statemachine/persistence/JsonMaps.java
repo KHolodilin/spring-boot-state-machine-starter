@@ -8,16 +8,26 @@ import tools.jackson.databind.json.JsonMapper;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Jackson 3 helpers for workflow context maps and event payloads stored as JSONB.
+ */
 public final class JsonMaps {
 
     private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
     private final JsonMapper mapper;
 
+    /**
+     * @param mapper application {@link JsonMapper}
+     */
     public JsonMaps(JsonMapper mapper) {
         this.mapper = mapper;
     }
 
+    /**
+     * @param value object or {@code null}
+     * @return JSON string, or {@code null} when {@code value} is {@code null}
+     */
     public String write(Object value) {
         if (value == null) {
             return null;
@@ -29,6 +39,10 @@ public final class JsonMaps {
         }
     }
 
+    /**
+     * @param json JSON object text
+     * @return empty map when {@code json} is blank
+     */
     public Map<String, Object> readMap(String json) {
         if (json == null || json.isBlank()) {
             return Map.of();
@@ -41,6 +55,11 @@ public final class JsonMaps {
         }
     }
 
+    /**
+     * @param json JSON payload
+     * @param type registered payload class; {@link Void} yields {@code null}
+     * @return deserialized value or {@code null}
+     */
     public <T> T read(String json, Class<T> type) {
         if (json == null || json.isBlank() || type == Void.class) {
             return null;

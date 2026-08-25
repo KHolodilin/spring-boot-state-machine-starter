@@ -15,6 +15,9 @@ public final class LoggingCommandPublisher implements StateMachineCommandPublish
 
     private static final Logger log = LoggerFactory.getLogger(LoggingCommandPublisher.class);
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void publish(StateMachineInstance machine, Collection<StateMachineCommand> commands) {
         for (StateMachineCommand command : commands) {

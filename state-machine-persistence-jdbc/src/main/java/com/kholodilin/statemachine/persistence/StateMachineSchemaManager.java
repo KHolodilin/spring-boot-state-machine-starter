@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+/**
+ * Applies {@code create}, {@code validate} or {@code none} against PostgreSQL at startup.
+ */
 public final class StateMachineSchemaManager {
 
     private static final String SCHEMA_RESOURCE = "state-machine-schema.sql";
@@ -20,12 +23,19 @@ public final class StateMachineSchemaManager {
     private final JdbcTemplate jdbcTemplate;
     private final SchemaMode mode;
 
+    /**
+     * @param dataSource target database
+     * @param mode       from {@code state-machine.persistence.schema.mode}
+     */
     public StateMachineSchemaManager(DataSource dataSource, SchemaMode mode) {
         this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.mode = mode;
     }
 
+    /**
+     * Runs create/validate according to {@link SchemaMode}.
+     */
     public void apply() {
         switch (mode) {
             case CREATE -> create();

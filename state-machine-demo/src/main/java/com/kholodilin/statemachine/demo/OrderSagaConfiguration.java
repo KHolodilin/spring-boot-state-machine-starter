@@ -4,9 +4,15 @@ import com.kholodilin.statemachine.definition.StateMachineDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * In-process order saga used by the demo module.
+ */
 @Configuration
 public class OrderSagaConfiguration {
 
+    /**
+     * Workflow states of the sample order saga.
+     */
     public enum OrderState {
         NEW,
         PAYMENT_PENDING,
@@ -16,6 +22,9 @@ public class OrderSagaConfiguration {
         CANCELLED
     }
 
+    /**
+     * Events of the sample order saga.
+     */
     public enum OrderEvent {
         START,
         PAYMENT_RESERVED,
@@ -25,6 +34,9 @@ public class OrderSagaConfiguration {
         PAYMENT_RELEASED
     }
 
+    /**
+     * @return definition named {@code order-saga}
+     */
     @Bean
     StateMachineDefinition<OrderState, OrderEvent> orderSaga() {
         return StateMachineDefinition

@@ -9,10 +9,17 @@ import com.kholodilin.statemachine.spi.StateMachineCache;
 import java.time.Duration;
 import java.util.Optional;
 
+/**
+ * Caffeine hot set of instance snapshots. A cache hit still uses optimistic {@code UPDATE ... WHERE version}.
+ */
 public final class CaffeineStateMachineCache implements StateMachineCache {
 
     private final Cache<String, StateMachineInstance> cache;
 
+    /**
+     * @param maxSize           Caffeine {@code maximumSize}
+     * @param expireAfterAccess idle eviction
+     */
     public CaffeineStateMachineCache(long maxSize, Duration expireAfterAccess) {
         this.cache = Caffeine.newBuilder()
                 .maximumSize(maxSize)
@@ -21,27 +28,42 @@ public final class CaffeineStateMachineCache implements StateMachineCache {
                 .build();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<StateMachineInstance> get(String machineType, String machineId) {
         return Optional.ofNullable(cache.getIfPresent(key(machineType, machineId)));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void put(StateMachineInstance instance) {
         cache.put(key(instance.machineType(), instance.machineId()), instance);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void invalidate(String machineType, String machineId) {
         cache.invalidate(key(machineType, machineId));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long size() {
         cache.cleanUp();
         return cache.estimatedSize();
     }
 
+    /**
+     * @return Caffeine stats for eviction gauges
+     */
     public CacheStats stats() {
         return cache.stats();
     }

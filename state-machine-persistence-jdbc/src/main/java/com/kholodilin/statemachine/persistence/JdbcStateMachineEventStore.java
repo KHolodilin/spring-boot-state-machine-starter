@@ -8,14 +8,23 @@ import org.springframework.jdbc.core.RowMapper;
 import java.sql.Timestamp;
 import java.util.Optional;
 
+/**
+ * JDBC implementation of {@link StateMachineEventStore} against {@code state_machine_event}.
+ */
 public final class JdbcStateMachineEventStore implements StateMachineEventStore {
 
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * @param jdbcTemplate Spring JDBC
+     */
     public JdbcStateMachineEventStore(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean exists(String eventId) {
         Integer count = jdbcTemplate.queryForObject(
@@ -25,6 +34,9 @@ public final class JdbcStateMachineEventStore implements StateMachineEventStore 
         return count != null && count > 0;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<ProcessedStateMachineEvent> find(String eventId) {
         return jdbcTemplate.query(
@@ -37,6 +49,9 @@ public final class JdbcStateMachineEventStore implements StateMachineEventStore 
                 eventId).stream().findFirst();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void append(ProcessedStateMachineEvent event) {
         jdbcTemplate.update(

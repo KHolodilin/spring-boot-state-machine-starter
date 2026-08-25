@@ -10,14 +10,23 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * JDBC implementation of {@link StateMachineRequestStore} against {@code state_machine_request}.
+ */
 public final class JdbcStateMachineRequestStore implements StateMachineRequestStore {
 
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * @param jdbcTemplate Spring JDBC
+     */
     public JdbcStateMachineRequestStore(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long append(StateMachineRequest request) {
         Long id = jdbcTemplate.queryForObject(
@@ -41,6 +50,9 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
         return id;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<StateMachineRequest> findById(long id) {
         return jdbcTemplate.query(
@@ -49,6 +61,9 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
                 id).stream().findFirst();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<StateMachineRequest> findByEventId(String eventId) {
         return jdbcTemplate.query(
@@ -57,6 +72,9 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
                 eventId).stream().findFirst();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<StateMachineRequest> findRecoverable(int batchSize) {
         return jdbcTemplate.query(
@@ -75,6 +93,9 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
                 batchSize);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<StateMachineRequest> claimRecoverable(String lockedBy, Instant lockedUntil, int batchSize) {
         return jdbcTemplate.query(
@@ -107,6 +128,9 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
                 Timestamp.from(lockedUntil));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean claim(long id, String lockedBy, Instant lockedUntil) {
         int updated = jdbcTemplate.update(
@@ -130,6 +154,9 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
         return updated == 1;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void markDone(long id) {
         jdbcTemplate.update(
@@ -142,6 +169,9 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
                 id);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void markFailed(long id, int retryCount) {
         jdbcTemplate.update(
@@ -155,6 +185,9 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
                 id);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void markDead(long id) {
         jdbcTemplate.update(
@@ -167,6 +200,9 @@ public final class JdbcStateMachineRequestStore implements StateMachineRequestSt
                 id);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Instant oldestPendingCreatedAt() {
         return jdbcTemplate.query(

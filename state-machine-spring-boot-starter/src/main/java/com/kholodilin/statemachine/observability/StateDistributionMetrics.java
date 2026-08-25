@@ -8,16 +8,26 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import java.util.List;
 
+/**
+ * Gauge {@code state_machine_state_count} grouped by {@code machineType} and {@code state}.
+ */
 public final class StateDistributionMetrics {
 
     private final JdbcTemplate jdbcTemplate;
     private final MultiGauge gauge;
 
+    /**
+     * @param jdbcTemplate instance table
+     * @param registry     Micrometer
+     */
     public StateDistributionMetrics(JdbcTemplate jdbcTemplate, MeterRegistry registry) {
         this.jdbcTemplate = jdbcTemplate;
         this.gauge = MultiGauge.builder("state_machine_state_count").register(registry);
     }
 
+    /**
+     * Reloads counts every 30 seconds.
+     */
     @Scheduled(fixedDelay = 30_000)
     public void refresh() {
         try {

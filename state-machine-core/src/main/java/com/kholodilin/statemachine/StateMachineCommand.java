@@ -5,7 +5,13 @@ package com.kholodilin.statemachine;
  */
 public interface StateMachineCommand {
 
+    /**
+     * @return short command name used in logs and Outbox rows
+     */
     String type();
 
+    /**
+     * @return serializable payload, often the command record itself
+     */
     Object payload();
 }

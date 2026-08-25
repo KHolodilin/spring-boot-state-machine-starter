@@ -19,8 +19,14 @@ import com.kholodilin.statemachine.exception.EventTypeMismatchException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Default {@link TransitionEngine}: matches transitions, evaluates guards, updates context and builds commands.
+ */
 public final class DefaultTransitionEngine implements TransitionEngine {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
     public TransitionResult transition(

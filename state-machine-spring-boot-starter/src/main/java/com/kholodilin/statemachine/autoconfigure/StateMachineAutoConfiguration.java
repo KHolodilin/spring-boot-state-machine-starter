@@ -51,6 +51,9 @@ import javax.sql.DataSource;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Wires definitions, JDBC stores, cache, async workers, metrics and health when {@code state-machine.enabled} is true.
+ */
 @AutoConfiguration(after = DataSourceAutoConfiguration.class)
 @EnableScheduling
 @EnableConfigurationProperties(StateMachineProperties.class)
@@ -58,18 +61,34 @@ import java.util.Locale;
 @ConditionalOnBean(DataSource.class)
 public class StateMachineAutoConfiguration {
 
+    /**
+     * Registry of all {@link StateMachineDefinition} beans. Duplicate {@code machineType} fails startup.
+     *
+     * @param definitions application beans
+     * @return in-memory registry
+     */
     @Bean
     @ConditionalOnMissingBean
     StateMachineRegistry stateMachineRegistry(List<StateMachineDefinition<?, ?>> definitions) {
         return new StateMachineRegistry.InMemory(definitions);
     }
 
+    /**
+     * @return pure transition engine
+     */
     @Bean
     @ConditionalOnMissingBean
     TransitionEngine transitionEngine() {
         return new DefaultTransitionEngine();
     }
 
+    /**
+     * Applies schema {@code create}/{@code validate}/{@code none} before stores are used.
+     *
+     * @param dataSource application DataSource
+     * @param properties schema mode
+     * @return manager after {@link StateMachineSchemaManager#apply()}
+     */
     @Bean(name = "stateMachineSchemaManager")
     @ConditionalOnMissingBean
     StateMachineSchemaManager stateMachineSchemaManager(DataSource dataSource, StateMachineProperties properties) {
@@ -79,12 +98,21 @@ public class StateMachineAutoConfiguration {
         return manager;
     }
 
+    /**
+     * @param mappers optional application {@link JsonMapper}
+     * @return JSON helpers for context and payloads
+     */
     @Bean
     @ConditionalOnMissingBean
     JsonMaps jsonMaps(ObjectProvider<JsonMapper> mappers) {
         return new JsonMaps(mappers.getIfAvailable(() -> JsonMapper.builder().build()));
     }
 
+    /**
+     * @param jdbcTemplate Spring JDBC
+     * @param jsonMaps     context codec
+     * @return instance store
+     */
     @Bean
     @DependsOn("stateMachineSchemaManager")
     @ConditionalOnMissingBean
@@ -92,6 +120,10 @@ public class StateMachineAutoConfiguration {
         return new JdbcStateMachineStore(jdbcTemplate, jsonMaps);
     }
 
+    /**
+     * @param jdbcTemplate Spring JDBC
+     * @return event history store
+     */
     @Bean
     @DependsOn("stateMachineSchemaManager")
     @ConditionalOnMissingBean
@@ -99,6 +131,10 @@ public class StateMachineAutoConfiguration {
         return new JdbcStateMachineEventStore(jdbcTemplate);
     }
 
+    /**
+     * @param jdbcTemplate Spring JDBC
+     * @return async request store
+     */
     @Bean
     @DependsOn("stateMachineSchemaManager")
     @ConditionalOnMissingBean
@@ -106,12 +142,20 @@ public class StateMachineAutoConfiguration {
         return new JdbcStateMachineRequestStore(jdbcTemplate);
     }
 
+    /**
+     * @param jdbcTemplate Spring JDBC
+     * @return PostgreSQL advisory lock
+     */
     @Bean
     @ConditionalOnMissingBean
     InstanceLock instanceLock(JdbcTemplate jdbcTemplate) {
         return new PostgresInstanceLock(jdbcTemplate);
     }
 
+    /**
+     * @param properties cache size and TTL
+     * @return Caffeine cache or no-op when disabled
+     */
     @Bean
     @ConditionalOnMissingBean
     StateMachineCache stateMachineCache(StateMachineProperties properties) {
@@ -123,6 +167,10 @@ public class StateMachineAutoConfiguration {
                 properties.getCache().getExpireAfterAccess());
     }
 
+    /**
+     * @param properties worker count and queue capacity
+     * @return partitioned in-memory queue
+     */
     @Bean
     @ConditionalOnMissingBean
     StateMachineDispatchQueue stateMachineDispatchQueue(StateMachineProperties properties) {
@@ -130,12 +178,23 @@ public class StateMachineAutoConfiguration {
         return new PartitionedMemoryDispatchQueue(workers, properties.getAsync().getQueue().getCapacity());
     }
 
+    /**
+     * Default publisher logs commands. Replace with a transactional Outbox bean in production.
+     *
+     * @return logging publisher
+     */
     @Bean
     @ConditionalOnMissingBean
     StateMachineCommandPublisher stateMachineCommandPublisher() {
         return new LoggingCommandPublisher();
     }
 
+    /**
+     * @param registries Micrometer registry if present
+     * @param cache      for size/eviction gauges
+     * @param queue      for size/pressure gauges
+     * @return transition and async metrics
+     */
     @Bean
     @ConditionalOnMissingBean
     StateMachineMetrics stateMachineMetrics(
@@ -146,6 +205,11 @@ public class StateMachineAutoConfiguration {
         return new StateMachineMetrics(registry, cache, queue);
     }
 
+    /**
+     * Core {@code send}/{@code sendAsync} implementation.
+     *
+     * @return transactional service
+     */
     @Bean
     @ConditionalOnMissingBean
     DefaultStateMachineService defaultStateMachineService(
@@ -178,12 +242,21 @@ public class StateMachineAutoConfiguration {
                 properties);
     }
 
+    /**
+     * @param service implementation bean
+     * @return public {@link StateMachineService} alias
+     */
     @Bean
     @ConditionalOnMissingBean(StateMachineService.class)
     StateMachineService stateMachineService(DefaultStateMachineService service) {
         return service;
     }
 
+    /**
+     * One platform thread per queue partition.
+     *
+     * @return worker pool lifecycle
+     */
     @Bean
     @ConditionalOnProperty(prefix = "state-machine.async", name = "enabled", havingValue = "true", matchIfMissing = true)
     @ConditionalOnMissingBean
@@ -194,6 +267,11 @@ public class StateMachineAutoConfiguration {
         return new StateMachineWorkerPool(queue, service, properties.getAsync().getWorkers());
     }
 
+    /**
+     * Re-offers durable requests that never reached a worker.
+     *
+     * @return scheduled recovery job
+     */
     @Bean
     @ConditionalOnProperty(prefix = "state-machine.async.recovery", name = "enabled", havingValue = "true", matchIfMissing = true)
     @ConditionalOnMissingBean
@@ -206,6 +284,11 @@ public class StateMachineAutoConfiguration {
                 requestStore, queue, metrics, properties.getAsync().getRecovery().getBatchSize());
     }
 
+    /**
+     * Periodic {@code state_machine_state_count} gauge by machine type and state.
+     *
+     * @return distribution metrics
+     */
     @Bean
     @ConditionalOnProperty(prefix = "state-machine.observability.metrics", name = "enabled", havingValue = "true", matchIfMissing = true)
     @ConditionalOnMissingBean
@@ -213,6 +296,11 @@ public class StateMachineAutoConfiguration {
         return new StateDistributionMetrics(jdbcTemplate, registries.getIfAvailable(SimpleMeterRegistry::new));
     }
 
+    /**
+     * Actuator indicator {@code stateMachine}. Queue overflow is not {@code DOWN} by itself.
+     *
+     * @return health contributor
+     */
     @Bean
     @ConditionalOnClass(HealthIndicator.class)
     @ConditionalOnProperty(prefix = "state-machine.observability.health", name = "enabled", havingValue = "true", matchIfMissing = true)

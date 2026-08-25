@@ -17,6 +17,9 @@ public record StateMachineEvent<E, P>(
         P payload
 ) {
 
+    /**
+     * Rejects null or blank identifiers.
+     */
     public StateMachineEvent {
         Objects.requireNonNull(eventId, "eventId");
         Objects.requireNonNull(machineId, "machineId");

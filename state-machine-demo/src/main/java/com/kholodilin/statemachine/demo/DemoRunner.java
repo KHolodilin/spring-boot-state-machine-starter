@@ -12,11 +12,20 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.UUID;
 
+/**
+ * Optional startup script controlled by {@code demo.auto-run}.
+ */
 @Configuration
 public class DemoRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DemoRunner.class);
 
+    /**
+     * Sends {@code START} then {@code PAYMENT_RESERVED} for {@code order-demo}.
+     *
+     * @param service starter service
+     * @return runner bean
+     */
     @Bean
     @ConditionalOnProperty(name = "demo.auto-run", havingValue = "true")
     ApplicationRunner runHappyPath(StateMachineService service) {

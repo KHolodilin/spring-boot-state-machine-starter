@@ -6,5 +6,9 @@ package com.kholodilin.statemachine;
 @FunctionalInterface
 public interface Guard<S extends Enum<S>, E extends Enum<E>, P> {
 
+    /**
+     * @param context transition snapshot after context update
+     * @return {@code true} to allow this transition
+     */
     boolean test(TransitionContext<S, E, P> context);
 }

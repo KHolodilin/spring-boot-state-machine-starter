@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * One daemon thread per queue partition. Must not block on remote I/O; transitions emit commands instead.
+ */
 public final class StateMachineWorkerPool implements SmartLifecycle {
 
     private static final Logger log = LoggerFactory.getLogger(StateMachineWorkerPool.class);
@@ -21,6 +24,11 @@ public final class StateMachineWorkerPool implements SmartLifecycle {
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final List<Thread> threads = new ArrayList<>();
 
+    /**
+     * @param queue   partitioned dispatch
+     * @param service processes request ids
+     * @param workers partition count
+     */
     public StateMachineWorkerPool(
             StateMachineDispatchQueue queue,
             DefaultStateMachineService service,
@@ -30,6 +38,9 @@ public final class StateMachineWorkerPool implements SmartLifecycle {
         this.workers = workers;
     }
 
+    /**
+     * Starts one thread per partition.
+     */
     @Override
     public void start() {
         if (!running.compareAndSet(false, true)) {
@@ -62,6 +73,9 @@ public final class StateMachineWorkerPool implements SmartLifecycle {
         }
     }
 
+    /**
+     * Interrupts worker threads so {@link StateMachineDispatchQueue#poll} returns.
+     */
     @Override
     public void stop() {
         running.set(false);
@@ -71,11 +85,17 @@ public final class StateMachineWorkerPool implements SmartLifecycle {
         threads.clear();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isRunning() {
         return running.get();
     }
 
+    /**
+     * @return configured partition / thread count
+     */
     public int workerCount() {
         return workers;
     }

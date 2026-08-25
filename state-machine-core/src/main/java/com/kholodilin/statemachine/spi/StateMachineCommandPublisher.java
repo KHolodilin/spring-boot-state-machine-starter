@@ -5,7 +5,15 @@ import com.kholodilin.statemachine.StateMachineInstance;
 
 import java.util.Collection;
 
+/**
+ * Publishes commands produced by a successful transition. Must run in the same JDBC
+ * transaction as the instance/event writes. Replace the default logger with an Outbox adapter.
+ */
 public interface StateMachineCommandPublisher {
 
+    /**
+     * @param machine  instance after the transition
+     * @param commands {@code 0..N} intents; empty is valid
+     */
     void publish(StateMachineInstance machine, Collection<StateMachineCommand> commands);
 }

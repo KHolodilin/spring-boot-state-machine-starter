@@ -10,6 +10,12 @@ import com.kholodilin.statemachine.definition.StateMachineDefinition;
  */
 public interface TransitionEngine {
 
+    /**
+     * @param definition static states, events and transitions
+     * @param instance   current durable snapshot
+     * @param event      incoming event whose type must match {@code definition.eventType()}
+     * @return success or rejected; never duplicate
+     */
     TransitionResult transition(
             StateMachineDefinition<?, ?> definition,
             StateMachineInstance instance,
