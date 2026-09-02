@@ -7,12 +7,13 @@
     <parent>
         <groupId>com.kholodilin</groupId>
         <artifactId>spring-boot-state-machine-starter-parent</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>0.1.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>state-machine-demo</artifactId>
     <name>State Machine Demo</name>
     <description>Minimal order-saga demo for the state machine starter.</description>
+    <url>https://github.com/KHolodilin/spring-boot-state-machine-starter</url>
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
