@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.kholodilin</groupId>
         <artifactId>spring-boot-state-machine-starter-parent</artifactId>
-        <version>0.1.1-SNAPSHOT</version>
+        <version>0.1.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>state-machine-demo</artifactId>

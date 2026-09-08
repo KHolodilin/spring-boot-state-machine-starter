@@ -79,7 +79,7 @@ Maven:
 <dependency>
     <groupId>com.kholodilin</groupId>
     <artifactId>state-machine-spring-boot-starter</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
 </dependency>
 ```
 
